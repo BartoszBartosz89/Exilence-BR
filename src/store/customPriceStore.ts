@@ -29,8 +29,8 @@ export class CustomPriceStore {
       }
     }
 
-    // Ensure consumers recompute immediately even when nested array items are changed in place.
     this.revision++;
+    this.rootStore.accountStore.getSelectedAccount?.activeProfile?.updateNetWorthOverlay();
   }
 
   @action
@@ -38,15 +38,28 @@ export class CustomPriceStore {
     const leaguePrices = this.customLeaguePrices.find((lp) => lp.leagueId === leagueId);
     if (!leaguePrices) {
       return;
-    } else {
-      const foundItem = findPrice(leaguePrices.prices, customPrice);
-      if (foundItem) {
-        const index = leaguePrices.prices.indexOf(foundItem);
-        leaguePrices.prices.splice(index, 1);
-      }
+    }
+
+    const foundItem = findPrice(leaguePrices.prices, customPrice);
+    if (foundItem) {
+      const index = leaguePrices.prices.indexOf(foundItem);
+      leaguePrices.prices.splice(index, 1);
     }
 
     this.revision++;
+    this.rootStore.accountStore.getSelectedAccount?.activeProfile?.updateNetWorthOverlay();
+  }
+
+  @action
+  clearCustomPricesForLeague(leagueId: string) {
+    const leagueIndex = this.customLeaguePrices.findIndex((lp) => lp.leagueId === leagueId);
+    if (leagueIndex === -1) {
+      return;
+    }
+
+    this.customLeaguePrices.splice(leagueIndex, 1);
+    this.revision++;
+    this.rootStore.accountStore.getSelectedAccount?.activeProfile?.updateNetWorthOverlay();
   }
 
   @action
