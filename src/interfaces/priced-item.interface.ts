@@ -32,4 +32,6 @@ export interface IPricedItem {
   inventoryId: string;
   tab: ICompactTab[];
   detailsUrl?: string;
+  customPrice?: number;
 }
+

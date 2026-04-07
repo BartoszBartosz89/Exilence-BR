@@ -220,6 +220,7 @@ export function itemValue(options: {
           pricedItem={data.row.original}
           placeholder={placeholder}
           diff={diff}
+          showCustomMark={accessor === 'calculated'}
         />
       );
     },
@@ -326,6 +327,7 @@ type ItemValueCellProps = {
   pricedItem: IPricedItem;
   placeholder?: string;
   diff?: boolean;
+  showCustomMark?: boolean;
 };
 
 const ItemValueCellComponent = ({
@@ -334,11 +336,14 @@ const ItemValueCellComponent = ({
   pricedItem,
   placeholder,
   diff,
+  showCustomMark,
 }: ItemValueCellProps) => {
-  const { uiStateStore, customPriceStore } = useStores();
+  const { uiStateStore, customPriceStore, accountStore } = useStores();
 
   const classes = useStyles();
   const { t } = useTranslation();
+  const hasCustomPrice = !!pricedItem.customPrice && pricedItem.customPrice > 0;
+
   const tryParseNumber = (value: boolean | string | number, diff?: boolean) => {
     return typeof value === 'number'
       ? `${diff && value > 0 ? '+ ' : ''}${value.toFixed(2)}`
@@ -346,11 +351,17 @@ const ItemValueCellComponent = ({
   };
 
   const toggleCustomPriceDialog = () => {
+    const fallbackLeagueId = accountStore!.getSelectedAccount.activeProfile?.activePriceLeagueId;
+    if (!uiStateStore!.selectedPriceTableLeagueId && fallbackLeagueId) {
+      uiStateStore!.setSelectedPriceTableLeagueId(fallbackLeagueId);
+    }
     uiStateStore!.setCustomPriceDialogOpen(true, pricedItem);
   };
 
   const removeCustomPrice = () => {
-    const activeLeagueId = uiStateStore!.selectedPriceTableLeagueId;
+    const activeLeagueId =
+      uiStateStore!.selectedPriceTableLeagueId ||
+      accountStore!.getSelectedAccount.activeProfile?.activePriceLeagueId;
     if (activeLeagueId) {
       customPriceStore!.removeCustomPrice(getRawPriceFromPricedItem(pricedItem), activeLeagueId);
     }
@@ -363,6 +374,7 @@ const ItemValueCellComponent = ({
           className={clsx(classes.itemValue, classes.lastCell, {
             [classes.positiveChange]: diff && value > 0,
             [classes.negativeChange]: diff && value < 0,
+            [classes.customPriceValue]: showCustomMark && hasCustomPrice,
           })}
         >
           {value ? tryParseNumber(value, diff) : placeholder}
@@ -384,7 +396,7 @@ const ItemValueCellComponent = ({
           <Tooltip title={t('label.remove_custom_price') || ''} placement="bottom">
             <>
               <IconButton
-                disabled={!value}
+                disabled={!hasCustomPrice}
                 size="small"
                 className={classes.inlineIcon}
                 onClick={removeCustomPrice}
@@ -503,3 +515,5 @@ const SparklineCell = ({ sparkline, id }: SparklineCellProps) => {
     </>
   );
 };
+
+

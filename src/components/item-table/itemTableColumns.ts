@@ -59,6 +59,7 @@ const itemTableColumns: Column<object>[] = [
   itemValue({
     accessor: 'calculated',
     header: 'Price (c)',
+    editable: true,
   }),
   itemValue({
     accessor: 'total',
@@ -71,3 +72,4 @@ const itemTableColumns: Column<object>[] = [
 ];
 
 export default itemTableColumns;
+
