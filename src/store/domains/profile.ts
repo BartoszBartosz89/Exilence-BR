@@ -26,7 +26,12 @@ import { IStashTabSnapshot } from '../../interfaces/stash-tab-snapshot.interface
 import { IStashTab } from '../../interfaces/stash.interface';
 import { pricingService } from '../../services/pricing.service';
 import { mapItemsToPricedItems, mergeItemStacks } from '../../utils/item.utils';
-import { excludeInvalidItems, excludeLegacyMaps, findPrice } from '../../utils/price.utils';
+import {
+  excludeInvalidItems,
+  excludeLegacyMaps,
+  findPrice,
+  findPriceForItem,
+} from '../../utils/price.utils';
 import { mapProfileToApiProfile } from '../../utils/profile.utils';
 import {
   calculateNetWorth,
@@ -103,6 +108,10 @@ export class Profile {
   @computed
   get items() {
     rootStore.customPriceStore.revision;
+    rootStore.settingStore.pricingModel;
+    rootStore.settingStore.poedbPricingDate;
+    rootStore.poeDbPriceStore.selectedDate;
+    rootStore.poeDbPriceStore.urlHistories.length;
     const diffSelected = rootStore.uiStateStore.itemTableSelection === 'comparison';
     if (this.snapshots.length === 0 || (diffSelected && this.snapshots.length < 2)) {
       return [];
@@ -123,6 +132,10 @@ export class Profile {
   @computed
   get netWorthValue() {
     rootStore.customPriceStore.revision;
+    rootStore.settingStore.pricingModel;
+    rootStore.settingStore.poedbPricingDate;
+    rootStore.poeDbPriceStore.selectedDate;
+    rootStore.poeDbPriceStore.urlHistories.length;
     if (this.snapshots.length === 0) {
       return 0;
     }
@@ -141,6 +154,10 @@ export class Profile {
   @computed
   get lastSnapshotChange() {
     rootStore.customPriceStore.revision;
+    rootStore.settingStore.pricingModel;
+    rootStore.settingStore.poedbPricingDate;
+    rootStore.poeDbPriceStore.selectedDate;
+    rootStore.poeDbPriceStore.urlHistories.length;
     if (this.snapshots.length < 2) {
       return 0;
     }
@@ -277,21 +294,44 @@ export class Profile {
     return getItemCount([mapSnapshotToApiSnapshot(this.snapshots[0])]);
   }
 
-
   private applyCustomPriceToItem(item: IPricedItem) {
     const foundCustomPrice = rootStore.customPriceStore.findCustomPriceForItem(
       item,
       this.activePriceLeagueId
     );
     const customPrice = foundCustomPrice?.customPrice;
-    if (!customPrice || customPrice <= 0) {
+
+    if (customPrice && customPrice > 0) {
+      return {
+        ...item,
+        calculated: customPrice,
+        total: item.stackSize * customPrice,
+        customPrice,
+      };
+    }
+
+    const activePrices = rootStore.priceStore.activePricesWithCustomValues || [];
+    const matchedLivePrice =
+      findPriceForItem(activePrices, item) ||
+      activePrices.find(
+        (price) => price.name === item.name && price.frameType === item.frameType
+      ) ||
+      activePrices.find((price) => price.name === item.name);
+
+    if (!matchedLivePrice) {
       return item;
     }
+
+    const effectivePrice = rootStore.priceStore.resolveEffectivePriceValue(matchedLivePrice);
+    if (!effectivePrice || effectivePrice <= 0) {
+      return item;
+    }
+
     return {
       ...item,
-      calculated: customPrice,
-      total: item.stackSize * customPrice,
-      customPrice,
+      calculated: effectivePrice,
+      total: item.stackSize * effectivePrice,
+      customPrice: matchedLivePrice.customPrice,
     };
   }
 
@@ -841,5 +881,3 @@ export class Profile {
     rootStore.notificationStore.createNotification('remove_all_snapshots', 'error', false, e);
   }
 }
-
-
