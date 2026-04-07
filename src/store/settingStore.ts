@@ -9,6 +9,12 @@ import { RootStore } from './rootStore';
 export type ReleaseChannel = 'latest' | 'beta';
 export type Currency = 'chaos' | 'exalt' | 'divine';
 export type AppExitTypes = 'minimize-to-tray' | 'exit';
+export type PricingModel =
+  | 'traditional'
+  | 'poedb_open'
+  | 'poedb_close'
+  | 'poedb_low'
+  | 'poedb_high';
 
 export class SettingStore {
   @persist @observable lowConfidencePricing: boolean = false;
@@ -26,6 +32,9 @@ export class SettingStore {
     'C:/Program Files (x86)/Grinding Gear Games/Path of Exile/logs/Client.txt';
   @persist @observable appExitAction: AppExitTypes =
     electronService.localSettings?.appExitAction || 'minimize-to-tray';
+
+  @persist @observable pricingModel: PricingModel = 'traditional';
+  @persist @observable poedbPricingDate?: string = undefined;
 
   constructor(private rootStore: RootStore) {
     makeObservable(this);
@@ -95,6 +104,21 @@ export class SettingStore {
   @action
   setTotalPriceThreshold(value: number) {
     this.totalPriceThreshold = value;
+  }
+
+  @action
+  setPricingModel(model: PricingModel) {
+    this.pricingModel = model;
+    if (model === 'traditional') {
+      this.poedbPricingDate = undefined;
+    }
+    rootStore.accountStore.getSelectedAccount?.activeProfile?.updateNetWorthOverlay();
+  }
+
+  @action
+  setPoedbPricingDate(date?: string) {
+    this.poedbPricingDate = date;
+    rootStore.accountStore.getSelectedAccount?.activeProfile?.updateNetWorthOverlay();
   }
 
   @action

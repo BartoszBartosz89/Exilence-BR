@@ -7,7 +7,11 @@ export const pricingService = {
   priceItem,
 };
 
-function priceItem(item: IPricedItem, prices: IExternalPrice[]) {
+function priceItem(
+  item: IPricedItem,
+  prices: IExternalPrice[],
+  resolveEffectivePrice?: (price: IExternalPrice) => number
+) {
   let price: IExternalPrice | undefined;
   item.total = 0;
   if (item.name === 'Chaos Orb') {
@@ -142,7 +146,10 @@ function priceItem(item: IPricedItem, prices: IExternalPrice[]) {
   if (price) {
     const { customPrice, ...rest } = price;
     modifiedPrice = rest;
-    modifiedPrice.calculated = customPrice || modifiedPrice.calculated;
+    const effectivePrice = resolveEffectivePrice
+      ? resolveEffectivePrice(price)
+      : customPrice || modifiedPrice.calculated;
+    modifiedPrice.calculated = effectivePrice;
     item.total = item.stackSize * (modifiedPrice.calculated ? modifiedPrice.calculated : 1);
     item = mapPriceToItem(item, modifiedPrice);
   }
