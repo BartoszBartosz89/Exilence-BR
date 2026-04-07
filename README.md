@@ -13,6 +13,7 @@ The app is a successor to our old application named Exilence, previously known a
 - [Changelog](https://github.com/exilence-ce/exilence-ce/blob/master/CHANGELOG.md)
 - [Platform](#platform)
 - [Contributing with development](#contributing-with-development)
+- [PoEDB historical price links](#poedb-historical-price-links)
 - [Contact us](#contact-us)
 - [Supporting us](#supporting-us)
 - [Acknowledgements](#acknowledgements)
@@ -78,6 +79,21 @@ npm run build (optional, to build the installer for production)
 npm run release (optional, to build the installer for production and release)
 ```
 
+## PoEDB historical price links
+
+PoEDB link generation and hardcoded mapping documentation lives in:
+
+- `docs/poedb-price-links.md`
+
+Quick commands:
+
+- `npm run poedb:generate-links` (default: only missing links)
+- `npm run poedb:generate-links:all` (full rescan)
+- `npm run poedb:generate-links:report` (retry unresolved items from previous report)
+
+Generated mapping file used by the app:
+
+- `src/data/poedb-item-links.generated.json`
 ## Contact us
 
 Communicate with us at our Discord https://discord.gg/2T3WXBgjaM
@@ -95,3 +111,7 @@ If you feel like chiming in with something, here's our Ko-fi: https://ko-fi.com/
 ## License
 
 This work is licensed under the Creative Commons Attribution-NonCommercial 3.0 Unported License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc/3.0/ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
+
+
+
