@@ -38,7 +38,6 @@ import {
   formatValue,
   getItemCount,
   getValueForSnapshot,
-  getValueForSnapshotsTabs,
   mapSnapshotToApiSnapshot,
 } from '../../utils/snapshot.utils';
 import { rootStore, visitor } from './../../index';
@@ -103,6 +102,7 @@ export class Profile {
 
   @computed
   get items() {
+    rootStore.customPriceStore.revision;
     const diffSelected = rootStore.uiStateStore.itemTableSelection === 'comparison';
     if (this.snapshots.length === 0 || (diffSelected && this.snapshots.length < 2)) {
       return [];
@@ -115,15 +115,20 @@ export class Profile {
         )
       );
     }
-    return filterSnapshotItems([mapSnapshotToApiSnapshot(this.snapshots[0])]);
+    return filterSnapshotItems([mapSnapshotToApiSnapshot(this.snapshots[0])]).map((item) =>
+      this.applyCustomPriceToItem(item)
+    );
   }
 
   @computed
   get netWorthValue() {
+    rootStore.customPriceStore.revision;
     if (this.snapshots.length === 0) {
       return 0;
     }
-    let calculatedValue = calculateNetWorth([mapSnapshotToApiSnapshot(this.snapshots[0])]);
+    let calculatedValue = this.getSnapshotValueWithCustomPrices(
+      mapSnapshotToApiSnapshot(this.snapshots[0])
+    );
     if (rootStore.settingStore.currency === 'exalt' && rootStore.priceStore.exaltedPrice) {
       calculatedValue = calculatedValue / rootStore.priceStore.exaltedPrice;
     }
@@ -135,15 +140,16 @@ export class Profile {
 
   @computed
   get lastSnapshotChange() {
+    rootStore.customPriceStore.revision;
     if (this.snapshots.length < 2) {
       return 0;
     }
-    let lastSnapshotNetWorth = getValueForSnapshotsTabs([
-      mapSnapshotToApiSnapshot(this.snapshots[0]),
-    ]);
-    let previousSnapshotNetWorth = getValueForSnapshotsTabs([
-      mapSnapshotToApiSnapshot(this.snapshots[1]),
-    ]);
+    let lastSnapshotNetWorth = this.getSnapshotValueWithCustomPrices(
+      mapSnapshotToApiSnapshot(this.snapshots[0])
+    );
+    let previousSnapshotNetWorth = this.getSnapshotValueWithCustomPrices(
+      mapSnapshotToApiSnapshot(this.snapshots[1])
+    );
 
     if (rootStore.settingStore.currency === 'exalt' && rootStore.priceStore.exaltedPrice) {
       lastSnapshotNetWorth = lastSnapshotNetWorth / rootStore.priceStore.exaltedPrice;
@@ -271,6 +277,30 @@ export class Profile {
     return getItemCount([mapSnapshotToApiSnapshot(this.snapshots[0])]);
   }
 
+
+  private applyCustomPriceToItem(item: IPricedItem) {
+    const foundCustomPrice = rootStore.customPriceStore.findCustomPriceForItem(
+      item,
+      this.activePriceLeagueId
+    );
+    const customPrice = foundCustomPrice?.customPrice;
+    if (!customPrice || customPrice <= 0) {
+      return item;
+    }
+    return {
+      ...item,
+      calculated: customPrice,
+      total: item.stackSize * customPrice,
+      customPrice,
+    };
+  }
+
+  private getSnapshotValueWithCustomPrices(snapshot: IApiSnapshot) {
+    return snapshot.stashTabs
+      .flatMap((tab) => tab.pricedItems)
+      .map((item) => this.applyCustomPriceToItem(item).total)
+      .reduce((sum, total) => sum + total, 0);
+  }
   @action
   calculateIncome() {
     const oneHourAgo = moment().utc().subtract(1, 'hours');
@@ -811,3 +841,5 @@ export class Profile {
     rootStore.notificationStore.createNotification('remove_all_snapshots', 'error', false, e);
   }
 }
+
+
