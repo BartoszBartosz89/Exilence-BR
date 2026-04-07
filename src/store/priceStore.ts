@@ -76,18 +76,39 @@ export class PriceStore {
     const exaltedOrbPrice = this.activePricesWithCustomValues?.find(
       (p) => p.name === 'Exalted Orb'
     );
-    return exaltedOrbPrice?.customPrice && exaltedOrbPrice.customPrice > 0
-      ? exaltedOrbPrice?.customPrice
-      : exaltedOrbPrice?.calculated;
+    const effectivePrice = exaltedOrbPrice
+      ? this.resolveEffectivePriceValue(exaltedOrbPrice)
+      : undefined;
+    return effectivePrice;
   }
 
   @computed get divinePrice() {
     const divineOrbPrice = this.activePricesWithCustomValues?.find((p) => p.name === 'Divine Orb');
-    return divineOrbPrice?.customPrice && divineOrbPrice.customPrice > 0
-      ? divineOrbPrice?.customPrice
-      : divineOrbPrice?.calculated;
+    const effectivePrice = divineOrbPrice
+      ? this.resolveEffectivePriceValue(divineOrbPrice)
+      : undefined;
+    return effectivePrice;
   }
 
+  resolveEffectivePriceValue(price: IExternalPrice): number {
+    if (price.customPrice && price.customPrice > 0) {
+      return price.customPrice;
+    }
+
+    const model = this.rootStore.settingStore.pricingModel;
+    if (model !== 'traditional') {
+      const poedbValue = this.rootStore.poeDbPriceStore.getMetricPriceForExternalPrice(
+        price,
+        model,
+        this.rootStore.settingStore.poedbPricingDate
+      );
+      if (typeof poedbValue === 'number' && Number.isFinite(poedbValue)) {
+        return poedbValue;
+      }
+    }
+
+    return price.calculated || 0;
+  }
   @computed get customPricesTableData() {
     const selectedLeagueId = this.rootStore.uiStateStore.selectedPriceTableLeagueId;
     const activeLeagueId = this.rootStore.accountStore.getSelectedAccount.activePriceLeague?.id;

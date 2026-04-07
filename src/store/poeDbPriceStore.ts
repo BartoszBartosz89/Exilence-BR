@@ -5,6 +5,7 @@ import { IPoeDbItemMapping } from '../interfaces/poedb-item-mapping.interface';
 import { IPoeDbPriceHistoryRow } from '../interfaces/poedb-price-history.interface';
 import { IPoeDbUrlHistory } from '../interfaces/poedb-url-history.interface';
 import { poeDbService } from '../services/poedb.service';
+import type { PricingModel } from './settingStore';
 import { RootStore } from './rootStore';
 
 const POEDB_PULL_CONCURRENCY = 1;
@@ -104,6 +105,43 @@ export class PoeDbPriceStore {
   @action
   setSelectedDate(date?: string) {
     this.selectedDate = date;
+  }
+
+  getMetricPriceForExternalPrice(
+    price: IExternalPrice,
+    model: PricingModel,
+    selectedDate?: string
+  ): number | undefined {
+    const url = this.getMappedUrlForExternalPrice(price);
+    if (!url) {
+      return undefined;
+    }
+
+    const history = this.historyByUrlMap.get(url)?.history;
+    if (!history || history.length === 0) {
+      return undefined;
+    }
+
+    const targetDate = selectedDate || this.availableDates[this.availableDates.length - 1];
+    const point = targetDate
+      ? history.find((entry) => entry.date === targetDate)
+      : history[history.length - 1];
+    if (!point) {
+      return undefined;
+    }
+
+    switch (model) {
+      case 'poedb_open':
+        return point.open;
+      case 'poedb_close':
+        return point.close;
+      case 'poedb_low':
+        return point.low;
+      case 'poedb_high':
+        return point.high;
+      default:
+        return undefined;
+    }
   }
 
   @action
@@ -269,7 +307,11 @@ export class PoeDbPriceStore {
     return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
   }
 
-  private upsertUrlHistory(url: string, incomingHistory?: IPoeDbPriceHistoryRow[], lastError?: string) {
+  private upsertUrlHistory(
+    url: string,
+    incomingHistory?: IPoeDbPriceHistoryRow[],
+    lastError?: string
+  ) {
     const existing = this.urlHistories.find((entry) => entry.url === url);
     const fetchedAt = new Date().toISOString();
 
@@ -303,6 +345,12 @@ export class PoeDbPriceStore {
       mapping.history = undefined;
       mapping.historyFetchedAt = undefined;
     });
+  }
+
+  private getMappedUrlForExternalPrice(price: IExternalPrice) {
+    const key = this.getItemKey(price);
+    const mapping = this.mappings.find((m) => m.itemKey === key);
+    return mapping?.url;
   }
 
   private get historyByUrlMap() {
