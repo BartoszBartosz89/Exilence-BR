@@ -146,6 +146,7 @@ const renderApp = () => {
     hydrate('league', rootStore.leagueStore),
     hydrate('setting', rootStore.settingStore),
     hydrate('rateLimit', rootStore.rateLimitStore),
+    hydrate('poedbPrice', rootStore.poeDbPriceStore),
   ])
     .then(() => {
       rootStore.settingStore.setUiScale(rootStore.settingStore.uiScale);
@@ -188,3 +189,4 @@ hydrate('migration', rootStore.migrationStore)
   .catch((err: Error) => {
     ReactDOM.render(<App error={err} />, document.getElementById('root'));
   });
+

@@ -81,7 +81,10 @@
     "smoke-build-mac": "npm run react-build && tsc -p electron && electron-builder -m --publish=never",
     "smoke-build-win": "npm run react-build && tsc -p electron && electron-builder -w --publish=never",
     "eslint": "eslint \"./**/*.{js,jsx,ts,tsx}\"",
-    "prettier": "prettier \"./**/*.{js,jsx,ts,tsx}\""
+    "prettier": "prettier \"./**/*.{js,jsx,ts,tsx}\"",
+    "poedb:generate-links": "node scripts/generate-poedb-links.js",
+    "poedb:generate-links:all": "node scripts/generate-poedb-links.js Standard 4 --mode=all",
+    "poedb:generate-links:report": "node scripts/generate-poedb-links.js Standard 4 --mode=report"
   },
   "eslintConfig": {
     "extends": "react-app"

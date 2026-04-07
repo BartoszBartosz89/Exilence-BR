@@ -13,6 +13,7 @@ import NetWorthSettings from './general/net-worth-settings/NetWorthSettings';
 import SnapshotSettings from './general/snapshot-settings/SnapshotSettings';
 import UiSettings from './interface/ui-settings/UiSettings';
 import CustomPricesSettings from './prices/custom-prices-settings/CustomPricesSettings';
+import PoeDbPricesSettings from './prices/poedb-prices-settings/PoeDbPricesSettings';
 import useStyles from './SettingsTabs.styles';
 import AppExitActionsSettings from './general/app-exit-actions-settings/AppExitActionsSettings';
 
@@ -55,7 +56,8 @@ const SettingsTabs = () => {
               className={classes.tab}
               {...a11yProps(2)}
             />
-            <Tab label={t('title.advanced_settings')} className={classes.tab} {...a11yProps(3)} />
+            <Tab label={'PoEDB prices'} className={classes.tab} {...a11yProps(3)} />
+            <Tab label={t('title.advanced_settings')} className={classes.tab} {...a11yProps(4)} />
           </Tabs>
           <SettingsTab value={settingsTabIndex} index={0}>
             <Box className={classes.subSection}>
@@ -94,6 +96,14 @@ const SettingsTabs = () => {
             </Box>
           </SettingsTab>
           <SettingsTab value={settingsTabIndex} index={3}>
+            <Box className={classes.subSection}>
+              <Typography variant="overline">PoEDB prices</Typography>
+              <Box my={2}>
+                <PoeDbPricesSettings />
+              </Box>
+            </Box>
+          </SettingsTab>
+          <SettingsTab value={settingsTabIndex} index={4}>
             <Box className={classes.subSection}>
               <Typography variant="overline">{t('title.release_channel_settings')}</Typography>
               <Box my={2}>
