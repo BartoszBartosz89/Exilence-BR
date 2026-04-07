@@ -8,6 +8,7 @@ import { RootStore } from './rootStore.js';
 
 export class CustomPriceStore {
   @observable @persist('list') customLeaguePrices: ILeaguePrices[] = [];
+  @observable revision: number = 0;
 
   constructor(private rootStore: RootStore) {
     makeObservable(this);
@@ -27,6 +28,9 @@ export class CustomPriceStore {
         leaguePrices.prices.push(customPrice);
       }
     }
+
+    // Ensure consumers recompute immediately even when nested array items are changed in place.
+    this.revision++;
   }
 
   @action
@@ -41,6 +45,8 @@ export class CustomPriceStore {
         leaguePrices.prices.splice(index, 1);
       }
     }
+
+    this.revision++;
   }
 
   @action

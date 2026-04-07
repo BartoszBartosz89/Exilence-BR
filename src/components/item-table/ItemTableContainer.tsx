@@ -40,6 +40,7 @@ import TableWrapper from '../table-wrapper/TableWrapper';
 import ItemTableFilterSubtotal from './item-table-filter-subtotal/ItemTableFilterSubtotal';
 import ItemTableFilter from './item-table-filter/ItemTableFilter';
 import ItemTableMenuContainer from './item-table-menu/ItemTableMenuContainer';
+import CustomPriceDialogContainer from '../custom-price-dialog/CustomPriceDialogContainer';
 import itemTableBulkSellColumns from './itemTableBulkSellColumns';
 import itemTableColumns from './itemTableColumns';
 import itemTableGroupColumns from './itemTableGroupColumns';
@@ -335,8 +336,10 @@ const ItemTableContainer = ({
       </Box>
       <TableWrapper instance={instance} setInitialState={setInitialState} />
       <ItemTableMenuContainer />
+      <CustomPriceDialogContainer />
     </>
   );
 };
 
 export default observer(ItemTableContainer);
+
