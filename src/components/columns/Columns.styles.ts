@@ -54,6 +54,10 @@ const useStyles = makeStyles((theme) => ({
   editIconRoot: {
     fontSize: '0.75rem',
   },
+  customPriceValue: {
+    color: primaryLighter,
+    fontWeight: 'bold',
+  },
   ellipsis: {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -62,3 +66,4 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default useStyles;
+
