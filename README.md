@@ -1,5 +1,4 @@
-Exilence CE
-[![Become a Ko-fi](https://shields.io/badge/ko--fi-Buy_me_a_coffee-ff5f5f?logo=ko-fi&style=for-the-badgeKo-fi)](https://ko-fi.com/ExilenceCE)
+Exilence Blight Ravaged Science Edition
 ===
 Exilence CE (previously Exilence Next) is a desktop application that helps you calculate how valuable your character, inventory and stash tabs are. The data is broken down and summarized over time, to see how much you earn on an hourly basis. To add to this, you can also group up with friends directly within the app to see your combined net worth.
 
@@ -102,10 +101,6 @@ The app ships with this generated map, so users do not need to apply PoEDB links
 Communicate with us at our Discord https://discord.gg/2T3WXBgjaM
 
 Report bugs at https://github.com/exilence-ce/exilence-ce/issues
-
-## Supporting us
-
-If you feel like chiming in with something, here's our Ko-fi: https://ko-fi.com/ExilenceCE
 
 ## Acknowledgements
 
