@@ -62,6 +62,30 @@ function containsEconomyChart(html) {
   return /"name":"volume traded"/i.test(html) && /splitData\(\[/i.test(html);
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getItemNameCandidates(item) {
+  const names = [item.name, item.baseType]
+    .filter((x) => x && String(x).trim().length > 0)
+    .map((x) => String(x).trim());
+
+  return Array.from(new Set(names.flatMap((name) => [name, name.replace(/'/g, ''), name.replace(/’/g, '')])));
+}
+
+function containsExpectedItemName(html, item) {
+  const candidates = getItemNameCandidates(item);
+  return candidates.some((name) => {
+    const normalizedName = escapeRegExp(name);
+    return new RegExp(`(^|[>"\\s])${normalizedName}([<"\\s]|$)`, 'i').test(html);
+  });
+}
+
+function isValidPoedbPage(html, item) {
+  return containsEconomyChart(html) && containsExpectedItemName(html, item);
+}
+
 function buildLookupKeyCandidates(item) {
   const keys = new Set();
   const names = [item.name, item.baseType].filter((x) => x && String(x).trim().length > 0);
@@ -109,33 +133,22 @@ async function tryGetHtml(url) {
 }
 
 async function resolvePoedbUrl(item) {
+  const wikiCandidates = [item.name, item.baseType].filter((x) => x && String(x).trim().length > 0);
+  for (const wikiName of wikiCandidates) {
+    const wikiUrl = `${POEDB_BASE}/${buildWikiSlug(wikiName)}`;
+    const wikiHtml = await tryGetHtml(wikiUrl);
+    if (wikiHtml && isValidPoedbPage(wikiHtml, item)) {
+      return wikiUrl;
+    }
+  }
+
   const slugCandidates = buildSlugCandidates(item);
 
   for (const slug of slugCandidates) {
     const economyUrl = `${POEDB_BASE}/Economy_${slug}`;
     const economyHtml = await tryGetHtml(economyUrl);
-    if (economyHtml && containsEconomyChart(economyHtml)) {
+    if (economyHtml && isValidPoedbPage(economyHtml, item)) {
       return economyUrl;
-    }
-  }
-
-  const wikiCandidates = [item.name, item.baseType].filter((x) => x && String(x).trim().length > 0);
-  for (const wikiName of wikiCandidates) {
-    const wikiUrl = `${POEDB_BASE}/${buildWikiSlug(wikiName)}`;
-    const wikiHtml = await tryGetHtml(wikiUrl);
-    if (!wikiHtml) {
-      continue;
-    }
-
-    const economyMatch = wikiHtml.match(/href="(Economy_[^"]+)"/i);
-    if (!economyMatch) {
-      continue;
-    }
-
-    const discovered = `${POEDB_BASE}/${economyMatch[1]}`;
-    const discoveredHtml = await tryGetHtml(discovered);
-    if (discoveredHtml && containsEconomyChart(discoveredHtml)) {
-      return discovered;
     }
   }
 
@@ -306,7 +319,7 @@ async function main() {
   console.log(`Building PoEDB links for league: ${args.league} | mode: ${args.mode}`);
 
   const existing = readExistingMap();
-  const generated = { ...existing };
+  const generated = args.mode === 'all' ? {} : { ...existing };
 
   let universe = [];
   let targets = [];

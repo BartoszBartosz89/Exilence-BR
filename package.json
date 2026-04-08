@@ -84,7 +84,9 @@
     "prettier": "prettier \"./**/*.{js,jsx,ts,tsx}\"",
     "poedb:generate-links": "node scripts/generate-poedb-links.js",
     "poedb:generate-links:all": "node scripts/generate-poedb-links.js Standard 4 --mode=all",
-    "poedb:generate-links:report": "node scripts/generate-poedb-links.js Standard 4 --mode=report"
+    "poedb:generate-links:report": "node scripts/generate-poedb-links.js Standard 4 --mode=report",
+    "poedb:validate-links": "node scripts/validate-poedb-links.js Standard 4",
+    "poedb:prune-invalid-links": "node scripts/prune-invalid-poedb-links.js"
   },
   "eslintConfig": {
     "extends": "react-app"

@@ -8,7 +8,7 @@ import { poeDbService } from '../services/poedb.service';
 import type { PricingModel } from './settingStore';
 import { RootStore } from './rootStore';
 
-const POEDB_PULL_CONCURRENCY = 1;
+const POEDB_PULL_CONCURRENCY = 2;
 const POEDB_PULL_THROTTLE_MS = 40;
 
 export class PoeDbPriceStore {
