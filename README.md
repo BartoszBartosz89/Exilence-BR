@@ -94,6 +94,9 @@ Quick commands:
 Generated mapping file used by the app:
 
 - `src/data/poedb-item-links.generated.json`
+
+The app ships with this generated map, so users do not need to apply PoEDB links manually after install.
+
 ## Contact us
 
 Communicate with us at our Discord https://discord.gg/2T3WXBgjaM

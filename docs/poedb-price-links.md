@@ -1,6 +1,7 @@
 # PoEDB Historical Price Link Mapping
 
 This repository includes a PoEDB integration that uses a generated hardcoded link map.
+New app installs get those bundled links out of the box.
 
 ## What is generated
 
@@ -67,10 +68,11 @@ A run writes `scripts/poedb-links-report.json` with:
 
 You can keep this file for diagnostics or delete it after review.
 
-## In-app pull behavior
+## In-app behavior
 
 In PoEDB tab:
 
+- Bundled hardcoded links are applied automatically from the shipped map when price items are available.
 - Pull missing dates fetches only URLs where latest saved date is older than today.
 - Full refresh forces fetch for all mapped URLs.
 - Pulling is deduplicated by PoEDB URL (one request can update many item rows).
@@ -87,7 +89,8 @@ So partial coverage is expected and not a runtime failure.
 2. (Optional) Retry unresolved subset:
    - `npm run poedb:generate-links:report`
 3. Commit updated `src/data/poedb-item-links.generated.json`.
-4. In app, sync PoEDB mappings and pull history from the PoEDB tab.
+4. Release the app with the updated `src/data/poedb-item-links.generated.json`.
+5. In app, pull history from the PoEDB tab when you want to refresh OHLC data.
 
 
 
