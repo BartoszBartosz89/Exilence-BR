@@ -52,4 +52,3 @@ export class RootStore {
     this.poeDbPriceStore = new PoeDbPriceStore(this);
   }
 }
-

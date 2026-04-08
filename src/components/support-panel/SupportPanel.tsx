@@ -4,9 +4,9 @@ import Popper, { PopperProps } from '@mui/material/Popper';
 import Typography from '@mui/material/Typography';
 import RedirectIcon from '@mui/icons-material/CallMade';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
-import FavoriteIcon from '@mui/icons-material/Favorite';
 import HistoryIcon from '@mui/icons-material/History';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
+import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import { observer } from 'mobx-react-lite';
 import React, { Dispatch, SetStateAction, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -66,7 +66,7 @@ const SupportPanel = ({ isOpen = false, setIsOpen, anchorEl = null }: SupportPan
             <Paper className={classes.paper} elevation={8}>
               <ul className={classes.list}>
                 <a
-                  href="https://discord.gg/2T3WXBgjaM"
+                  href="https://discord.gg/rQVGM3pWHy"
                   onClick={(e) => handleLinkClick(e)}
                   className={classes.optionLink}
                 >
@@ -77,7 +77,7 @@ const SupportPanel = ({ isOpen = false, setIsOpen, anchorEl = null }: SupportPan
                 {/*  <Typography variant="body2">{t('label.faq')}</Typography>*/}
                 {/*</li>*/}
                 <li className={classes.option} onClick={handleWhatsNewClick}>
-                  <Typography variant="body2">{t('label.whats_new')}</Typography>
+                  <Typography variant="body2">What&apos;s new in this fork</Typography>
                   <StarRoundedIcon className={classes.icon} />
                 </li>
                 {!isLoginRoute && (
@@ -88,30 +88,15 @@ const SupportPanel = ({ isOpen = false, setIsOpen, anchorEl = null }: SupportPan
                 )}
                 <div className={classes.separator} />
                 <a
-                  href="https://github.com/exilence-ce/exilence-ce/issues/new?template=feature_request.md"
+                  href="https://www.youtube.com/@RavagedBlightScience/videos"
                   onClick={(e) => handleLinkClick(e)}
                   className={classes.optionLink}
                 >
-                  <Typography variant="body2">{t('label.feature_request')}</Typography>
-                </a>
-                <a
-                  href="https://github.com/exilence-ce/exilence-ce/issues/new?template=bug_report.md"
-                  onClick={(e) => handleLinkClick(e)}
-                  className={classes.optionLink}
-                >
-                  <Typography variant="body2">{t('label.bug_report')}</Typography>
-                </a>
-                <div className={classes.separator} />
-                <a
-                  href="https://ko-fi.com/ExilenceCE"
-                  onClick={(e) => handleLinkClick(e)}
-                  className={classes.optionLink}
-                >
-                  <Typography variant="body2">{t('label.support_us')}</Typography>
-                  <FavoriteIcon className={classes.icon} />
+                  <Typography variant="body2">YouTube channel</Typography>
+                  <VideoLibraryIcon className={classes.icon} />
                 </a>
                 <li className={classes.option} onClick={handleCreditsClick}>
-                  <Typography variant="body2">{t('label.credits')}</Typography>
+                  <Typography variant="body2">About this fork</Typography>
                   <CardGiftcardIcon className={classes.icon} />
                 </li>
               </ul>

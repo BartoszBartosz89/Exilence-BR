@@ -1,10 +1,20 @@
+# Exilence Blight Ravaged Science Edition
 
-## Exalted Supporters
-- N/A
-## Developers
-- CojL
-- Umocrajen
-- Ailuro
-## Special thanks to
-- Rasmuskl (https://poe.ninja) for providing an API for prices
-- GGG for providing direct support with endpoints and OAuth
+## Main Developer
+
+- glokz
+
+## Community
+
+- Discord: https://discord.gg/rQVGM3pWHy
+- YouTube: https://www.youtube.com/@RavagedBlightScience/videos
+
+## Project Focus
+
+- Blight Ravaged and economy tooling updates
+- League-by-league maintenance for this fork
+
+## Acknowledgements
+
+- https://poe.ninja for price data
+- Grinding Gear Games for Path of Exile services and OAuth endpoints
