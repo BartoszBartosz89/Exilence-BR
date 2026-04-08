@@ -4,8 +4,6 @@ import makeStyles from '@mui/styles/makeStyles';
 import { primaryLighter } from '../../assets/themes/exilence-theme';
 import { resizeHandleContainerHeight, toolbarHeight } from './Header';
 
-export const kofiLogoHeight = 21;
-
 const useStyles = makeStyles((theme) =>
   createStyles({
     header: {
@@ -13,13 +11,29 @@ const useStyles = makeStyles((theme) =>
       backgroundColor: theme.palette.secondary.dark,
       backgroundImage: 'none',
     },
+    titleRow: {
+      display: 'flex',
+      alignItems: 'baseline',
+      gap: theme.spacing(0.75),
+      minWidth: 0,
+    },
     title: {
-      flexGrow: 1,
+      flexShrink: 0,
       fontSize: '0.85rem',
       textTransform: 'uppercase',
       letterSpacing: '4px',
       color: theme.palette.primary.light,
       fontWeight: 700,
+    },
+    titleSuffix: {
+      minWidth: 0,
+      fontSize: '0.68rem',
+      textTransform: 'uppercase',
+      letterSpacing: '1.1px',
+      color: '#d4af37',
+      fontWeight: 700,
+      lineHeight: 1.1,
+      textShadow: '0 0 10px rgba(212, 175, 55, 0.18)',
     },
     version: {
       flexGrow: 1,
@@ -28,15 +42,6 @@ const useStyles = makeStyles((theme) =>
     updateAvailable: {
       flexGrow: 1,
       color: '#20cc76',
-    },
-    kofiWrapper: {
-      background: '#fff',
-      marginRight: theme.spacing(1),
-      marginLeft: theme.spacing(1),
-      padding: '1px 3px',
-    },
-    kofiLogo: {
-      height: kofiLogoHeight,
     },
     toolbar: {
       minHeight: toolbarHeight,

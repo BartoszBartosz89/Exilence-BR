@@ -23,7 +23,7 @@ const createTray = ({ mainWindow, updateAvailable, isQuittingCallback }: CreateT
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Show Exilence CE',
+      label: 'Show Exilence Blight Ravaged Science Edition',
       click: () => mainWindow.show(),
     },
     {
@@ -33,19 +33,11 @@ const createTray = ({ mainWindow, updateAvailable, isQuittingCallback }: CreateT
         await checkForUpdates();
       },
     },
-    { type: 'separator' },
-    {
-      label: 'Donate',
-      type: 'normal',
-      click: async () => {
-        await shell.openExternal('https://ko-fi.com/ExilenceCE');
-      },
-    },
     {
       label: 'Discord / Help',
       type: 'normal',
       click: async () => {
-        await shell.openExternal('https://discord.gg/2T3WXBgjaM');
+        await shell.openExternal('https://discord.gg/rQVGM3pWHy');
       },
     },
     { type: 'separator' },
@@ -60,7 +52,7 @@ const createTray = ({ mainWindow, updateAvailable, isQuittingCallback }: CreateT
     },
   ]);
 
-  tray.setToolTip('Exilence CE');
+  tray.setToolTip('Exilence Blight Ravaged Science Edition');
   tray.on('click', () => mainWindow.show());
   tray.setIgnoreDoubleClickEvents(true);
   tray.setContextMenu(contextMenu);
