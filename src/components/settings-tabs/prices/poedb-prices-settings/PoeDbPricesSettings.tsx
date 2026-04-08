@@ -1,5 +1,4 @@
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
-import LinkIcon from '@mui/icons-material/Link';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SearchIcon from '@mui/icons-material/Search';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
@@ -66,7 +65,8 @@ const PoeDbPricesSettings = () => {
       <Grid item xs={12}>
         <Typography variant="h6">PoEDB historical prices (compact mode)</Typography>
         <Typography variant="body2" color="textSecondary">
-          Uses the same item universe as the normal Prices tab and keeps PoEDB data separate.
+          Uses the same item universe as the normal Prices tab, ships with bundled PoEDB links, and
+          keeps PoEDB data separate.
         </Typography>
       </Grid>
 
@@ -81,19 +81,6 @@ const PoeDbPricesSettings = () => {
             }}
           >
             Sync items from Prices tab
-          </Button>
-
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<LinkIcon />}
-            disabled={poeDbPriceStore.resolving}
-            onClick={() => {
-              poeDbPriceStore.resolveLinksForAllItems();
-              setPage(0);
-            }}
-          >
-            Apply hardcoded links
           </Button>
 
           <Button
@@ -138,7 +125,9 @@ const PoeDbPricesSettings = () => {
               fullWidth
               displayEmpty
               value={selectedDate}
-              onChange={(e) => poeDbPriceStore.setSelectedDate((e.target.value as string) || undefined)}
+              onChange={(e) =>
+                poeDbPriceStore.setSelectedDate((e.target.value as string) || undefined)
+              }
             >
               <MenuItem value="">Latest available</MenuItem>
               {poeDbPriceStore.availableDates.map((d) => (
@@ -151,29 +140,12 @@ const PoeDbPricesSettings = () => {
         </Box>
       </Grid>
 
-      {poeDbPriceStore.resolving && (
-        <Grid item xs={12}>
-          <Typography variant="body2" gutterBottom>
-            Applying links: {poeDbPriceStore.resolveProgress.done}/{poeDbPriceStore.resolveProgress.total}
-            {' '}| matched {poeDbPriceStore.resolveProgress.resolved} | hardcoded entries {poeDbPriceStore.hardcodedLinksCount}
-          </Typography>
-          <LinearProgress
-            variant="determinate"
-            value={
-              poeDbPriceStore.resolveProgress.total > 0
-                ? (poeDbPriceStore.resolveProgress.done / poeDbPriceStore.resolveProgress.total) * 100
-                : 0
-            }
-          />
-        </Grid>
-      )}
-
       {poeDbPriceStore.pulling && (
         <Grid item xs={12}>
           <Typography variant="body2" gutterBottom>
-            Pulling URLs: {poeDbPriceStore.pullProgress.done}/{poeDbPriceStore.pullProgress.total}
-            {' '}| success {poeDbPriceStore.pullProgress.success}
-            {' '}| skipped up-to-date {poeDbPriceStore.pullProgress.skipped}
+            Pulling URLs: {poeDbPriceStore.pullProgress.done}/{poeDbPriceStore.pullProgress.total} |
+            success {poeDbPriceStore.pullProgress.success} | skipped up-to-date{' '}
+            {poeDbPriceStore.pullProgress.skipped}
           </Typography>
           <LinearProgress
             variant="determinate"
@@ -226,7 +198,9 @@ const PoeDbPricesSettings = () => {
           />
 
           <Typography variant="body2" color="textSecondary">
-            Showing {filteredRows.length} rows | Total rows {allRows.length} | Resolved rows {poeDbPriceStore.resolvedRowsCount} | Resolved URLs {poeDbPriceStore.resolvedUniqueUrlCount} | Dates {poeDbPriceStore.availableDates.length}
+            Showing {filteredRows.length} rows | Total rows {allRows.length} | Resolved rows{' '}
+            {poeDbPriceStore.resolvedRowsCount} | Resolved URLs{' '}
+            {poeDbPriceStore.resolvedUniqueUrlCount} | Dates {poeDbPriceStore.availableDates.length}
           </Typography>
         </Box>
 
@@ -278,7 +252,9 @@ const PoeDbPricesSettings = () => {
                   <TableCell align="right">{row.point?.high ?? '-'}</TableCell>
                   <TableCell align="right">{row.point?.rate ?? '-'}</TableCell>
                   <TableCell align="right">
-                    {typeof row.point?.volume === 'number' ? row.point.volume.toLocaleString() : '-'}
+                    {typeof row.point?.volume === 'number'
+                      ? row.point.volume.toLocaleString()
+                      : '-'}
                   </TableCell>
                 </TableRow>
               ))}
@@ -301,4 +277,3 @@ const PoeDbPricesSettings = () => {
 };
 
 export default observer(PoeDbPricesSettings);
-
