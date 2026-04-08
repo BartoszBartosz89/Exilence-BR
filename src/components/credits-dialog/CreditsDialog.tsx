@@ -1,28 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import InfoDialog from '../info-dialog/InfoDialog';
 
+const creditsMarkdown = `
+## Main developer
+
+- glokz
+
+## Community
+
+- Discord: https://discord.gg/rQVGM3pWHy
+- YouTube: https://www.youtube.com/@RavagedBlightScience/videos
+
+## Project focus
+
+- Blight Ravaged and economy tooling updates
+- Ongoing league-to-league maintenance for this fork
+
+## Acknowledgements
+
+- https://poe.ninja for price data
+- Grinding Gear Games for Path of Exile services and OAuth endpoints
+`;
+
 const CreditsDialog = ({ open, onClose }: any) => {
-  const [isFetching, setIsFetching] = useState(false);
-  const [changelog, setChangelog] = useState('');
-
-  useEffect(() => {
-    if (!isFetching) {
-      setIsFetching(true);
-      fetch('https://raw.githubusercontent.com/exilence-ce/exilence-ce/master/CREDITS.md')
-        .then((response) => response.text())
-        .then((result) => {
-          setChangelog(result);
-          setIsFetching(false);
-        });
-    }
-  }, []);
-
   return (
     <InfoDialog
       show={open}
-      title="Credits"
-      content={<ReactMarkdown>{isFetching ? '' : changelog}</ReactMarkdown>}
+      title="About this fork"
+      content={<ReactMarkdown>{creditsMarkdown}</ReactMarkdown>}
       onClose={onClose}
     />
   );

@@ -17,4 +17,3 @@ export function exportData<T>(data: T[], documentTitle: string = 'Export') {
 
   csvExporter.generateCsv(data);
 }
-

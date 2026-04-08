@@ -45,7 +45,7 @@ declare module '@mui/styles/defaultTheme' {
   interface DefaultTheme extends Theme {}
 }
 
-export const appName = 'Exilence CE';
+export const appName = 'Exilence Blight Ravaged Science Edition';
 export let visitor: Visitor | undefined = undefined;
 initSentry();
 configureI18n();
@@ -189,4 +189,3 @@ hydrate('migration', rootStore.migrationStore)
   .catch((err: Error) => {
     ReactDOM.render(<App error={err} />, document.getElementById('root'));
   });
-
