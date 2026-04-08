@@ -1,4 +1,4 @@
-import { action, computed, makeObservable, observable, runInAction } from 'mobx';
+import { action, computed, makeObservable, observable, reaction, runInAction } from 'mobx';
 import { persist } from 'mobx-persist';
 import { IExternalPrice } from '../interfaces/external-price.interface';
 import { IPoeDbItemMapping } from '../interfaces/poedb-item-mapping.interface';
@@ -37,6 +37,13 @@ export class PoeDbPriceStore {
 
   constructor(private rootStore: RootStore) {
     makeObservable(this);
+    reaction(
+      () => this.sourceItemsSignature,
+      () => {
+        this.syncMappingsFromPrices();
+      },
+      { fireImmediately: true }
+    );
   }
 
   @computed
@@ -47,6 +54,11 @@ export class PoeDbPriceStore {
       dedup.set(this.getItemKey(p), p);
     });
     return Array.from(dedup.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  @computed
+  get sourceItemsSignature(): string {
+    return this.sourceItems.map((item) => this.getItemKey(item)).join('\n');
   }
 
   @computed
