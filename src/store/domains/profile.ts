@@ -34,15 +34,12 @@ import {
 } from '../../utils/price.utils';
 import { mapProfileToApiProfile } from '../../utils/profile.utils';
 import {
-  calculateNetWorth,
   diffSnapshots,
   filterItems,
   filterSnapshotItems,
-  formatSnapshotsForChart,
   formatStashTabSnapshotsForChart,
   formatValue,
   getItemCount,
-  getValueForSnapshot,
   mapSnapshotToApiSnapshot,
 } from '../../utils/snapshot.utils';
 import { rootStore, visitor } from './../../index';
@@ -181,6 +178,11 @@ export class Profile {
 
   @computed
   get chartData() {
+    rootStore.customPriceStore.revision;
+    rootStore.settingStore.pricingModel;
+    rootStore.settingStore.poedbPricingDate;
+    rootStore.poeDbPriceStore.selectedDate;
+    rootStore.poeDbPriceStore.urlHistories.length;
     let snapshots = [...this.snapshots];
 
     if (snapshots.length === 0) {
@@ -210,7 +212,15 @@ export class Profile {
 
     const connectionSeries: IConnectionChartSeries = {
       seriesName: this.name,
-      series: formatSnapshotsForChart(snapshots.map((s) => mapSnapshotToApiSnapshot(s))),
+      series: snapshots
+        .map((snapshot) => {
+          const apiSnapshot = mapSnapshotToApiSnapshot(snapshot);
+          return [
+            moment(new Date(apiSnapshot.created).getTime()).valueOf(),
+            +this.getSnapshotValueWithCustomPrices(apiSnapshot).toFixed(2),
+          ] as number[];
+        })
+        .sort((n1, n2) => n1[0] - n2[0]),
     };
 
     return [connectionSeries];
@@ -218,6 +228,11 @@ export class Profile {
 
   @computed
   get sparklineChartData(): ISparklineDataPoint[] | undefined {
+    rootStore.customPriceStore.revision;
+    rootStore.settingStore.pricingModel;
+    rootStore.settingStore.poedbPricingDate;
+    rootStore.poeDbPriceStore.selectedDate;
+    rootStore.poeDbPriceStore.urlHistories.length;
     const sortedSnapshots = this.snapshots
       .slice(0, 10)
       .sort((a, b) => (moment(a.created).isAfter(b.created) ? 1 : -1));
@@ -226,15 +241,21 @@ export class Profile {
       return;
     }
     return snapshots.map((s, i) => {
+      const apiSnapshot = mapSnapshotToApiSnapshot(s);
       return {
         x: i + 1,
-        y: getValueForSnapshot(mapSnapshotToApiSnapshot(s)),
+        y: this.getSnapshotValueWithCustomPrices(apiSnapshot),
       } as ISparklineDataPoint;
     });
   }
 
   @computed
   get tabChartData() {
+    rootStore.customPriceStore.revision;
+    rootStore.settingStore.pricingModel;
+    rootStore.settingStore.poedbPricingDate;
+    rootStore.poeDbPriceStore.selectedDate;
+    rootStore.poeDbPriceStore.urlHistories.length;
     const snapshots = [...this.snapshots.slice(0, 50)];
 
     const league = rootStore.leagueStore.leagues.find((l) => l.id === this.activeLeagueId);
@@ -258,7 +279,7 @@ export class Profile {
     snapshots.map((s) => {
       const data = s.stashTabSnapshots.map((sts) => {
         return {
-          value: sts.value,
+          value: this.getStashTabValueWithCustomPrices(sts.pricedItems),
           stashTabId: sts.stashTabId,
           created: s.created,
         } as IChartStashTabSnapshot;
@@ -341,6 +362,12 @@ export class Profile {
       .map((item) => this.applyCustomPriceToItem(item).total)
       .reduce((sum, total) => sum + total, 0);
   }
+
+  private getStashTabValueWithCustomPrices(pricedItems: IPricedItem[]) {
+    return pricedItems
+      .map((item) => this.applyCustomPriceToItem(item).total)
+      .reduce((sum, total) => sum + total, 0);
+  }
   @action
   calculateIncome() {
     const oneHourAgo = moment().utc().subtract(1, 'hours');
@@ -352,7 +379,9 @@ export class Profile {
       const lastSnapshot = mapSnapshotToApiSnapshot(snapshots[0]);
       const firstSnapshot = mapSnapshotToApiSnapshot(snapshots[snapshots.length - 1]);
       const incomePerHour =
-        (calculateNetWorth([lastSnapshot]) - calculateNetWorth([firstSnapshot])) / hoursToCalcOver;
+        (this.getSnapshotValueWithCustomPrices(lastSnapshot) -
+          this.getSnapshotValueWithCustomPrices(firstSnapshot)) /
+        hoursToCalcOver;
       this.income = incomePerHour;
 
       return;

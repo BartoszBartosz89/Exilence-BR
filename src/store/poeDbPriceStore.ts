@@ -201,19 +201,15 @@ export class PoeDbPriceStore {
   @action
   syncMappingsFromPrices() {
     this.migrateLegacyHistoryToUrlCache();
-
-    const existing = new Map(this.mappings.map((m) => [m.itemKey, m]));
     const nowIso = new Date().toISOString();
 
     const next: IPoeDbItemMapping[] = this.sourceItems.map((item) => {
-      const key = this.getItemKey(item);
-      const found = existing.get(key);
       const hardcodedUrl = poeDbService.getHardcodedUrlForItem(item);
-      const resolvedUrl = hardcodedUrl || found?.url;
+      const resolvedUrl = hardcodedUrl;
       const status = resolvedUrl ? 'resolved' : 'no_match';
 
       return {
-        itemKey: key,
+        itemKey: this.getItemKey(item),
         name: item.name,
         icon: item.icon,
         url: resolvedUrl,
