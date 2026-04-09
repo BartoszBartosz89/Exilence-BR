@@ -1,5 +1,6 @@
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
 import SyncIcon from '@mui/icons-material/Sync';
@@ -212,6 +213,7 @@ const PoeDbPricesSettings = () => {
                 <TableCell>Name</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>PoEDB</TableCell>
+                <TableCell>Actions</TableCell>
                 <TableCell align="right">Open</TableCell>
                 <TableCell align="right">Close</TableCell>
                 <TableCell align="right">Low</TableCell>
@@ -241,6 +243,21 @@ const PoeDbPricesSettings = () => {
                         rel="noreferrer"
                       >
                         Open
+                      </Button>
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {row.url ? (
+                      <Button
+                        size="small"
+                        variant="text"
+                        startIcon={<RefreshIcon />}
+                        disabled={poeDbPriceStore.pulling}
+                        onClick={() => poeDbPriceStore.pullHistoryForUrl(row.url as string, true)}
+                      >
+                        Refresh
                       </Button>
                     ) : (
                       '-'

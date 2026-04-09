@@ -143,6 +143,8 @@ export class PoeDbPriceStore {
     }
 
     switch (model) {
+      case 'poedb_rate':
+        return point.rate;
       case 'poedb_open':
         return point.open;
       case 'poedb_close':
@@ -270,6 +272,58 @@ export class PoeDbPriceStore {
         this.selectedDate = this.availableDates[this.availableDates.length - 1];
       }
     });
+  }
+
+  @action
+  async pullHistoryForUrl(url: string, force: boolean = true) {
+    if (!url) {
+      return;
+    }
+
+    this.error = undefined;
+    this.pulling = true;
+    this.cancelPull = false;
+    this.migrateLegacyHistoryToUrlCache();
+    this.pullProgress = {
+      total: 1,
+      done: 0,
+      success: 0,
+      skipped: 0,
+    };
+
+    try {
+      const existing = this.historyByUrlMap.get(url);
+      const shouldFetch =
+        force || this.needsHistoryRefresh(existing?.history, this.getTodayDateKey());
+
+      if (!shouldFetch) {
+        runInAction(() => {
+          this.pullProgress.done = 1;
+          this.pullProgress.skipped = 1;
+          this.pulling = false;
+        });
+        return;
+      }
+
+      const incomingHistory = await poeDbService.fetchHistoryFromUrl(url);
+
+      runInAction(() => {
+        this.upsertUrlHistory(url, incomingHistory, undefined);
+        this.pullProgress.success = 1;
+        this.pullProgress.done = 1;
+        this.pulling = false;
+        if (this.availableDates.length > 0) {
+          this.selectedDate = this.availableDates[this.availableDates.length - 1];
+        }
+      });
+    } catch (e: any) {
+      runInAction(() => {
+        this.upsertUrlHistory(url, undefined, e?.message || 'Pull failed');
+        this.pullProgress.done = 1;
+        this.pulling = false;
+        this.error = e?.message || 'Pull failed';
+      });
+    }
   }
 
   private async runWithConcurrency<T>(
