@@ -15,6 +15,7 @@ import NumberInputSetting from '../../components/number-input-setting/NumberInpu
 
 const pricingModelOptions = [
   { value: 'traditional', label: 'Traditional prices' },
+  { value: 'poedb_rate', label: 'PoEDB Rate (recommended)' },
   { value: 'poedb_open', label: 'PoEDB Open' },
   { value: 'poedb_close', label: 'PoEDB Close' },
   { value: 'poedb_low', label: 'PoEDB Low' },
@@ -89,7 +90,8 @@ const NetWorthSettings = () => {
             ))}
           </Select>
           <FormHelperText>
-            Custom prices always win. PoEDB model falls back to traditional when missing.
+            Custom prices always win. PoEDB Rate is the best match for PoEDB&apos;s displayed
+            exchange value and falls back to traditional when missing.
           </FormHelperText>
         </FormControl>
       </Grid>

@@ -292,7 +292,7 @@ async function detectQuoteContext(
 
   const chartRow = exchangeRows[0];
   const latest = rows[rows.length - 1];
-  const latestValue = Number.isFinite(latest.close) ? latest.close : latest.rate;
+  const latestValue = Number.isFinite(latest.rate) ? latest.rate : latest.close;
   const distanceToLeft = relativeDistance(latestValue, chartRow.leftAmount);
   const distanceToRight = relativeDistance(latestValue, chartRow.rightAmount);
 
