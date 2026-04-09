@@ -49,7 +49,7 @@ const itemTableGroupColumns: Column<object>[] = [
   }),
   sparkLine({
     accessor: 'sparkLine.totalChange',
-    header: 'Price last 7 days',
+    header: 'Price trend (7d)',
   }),
   itemValue({
     accessor: 'calculated',

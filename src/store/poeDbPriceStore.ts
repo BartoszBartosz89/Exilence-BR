@@ -158,6 +158,44 @@ export class PoeDbPriceStore {
     }
   }
 
+  getSparklineDetailsForExternalPrice(
+    price: IExternalPrice,
+    model: PricingModel,
+    selectedDate?: string,
+    dayCount: number = 7
+  ) {
+    const url = this.getMappedUrlForExternalPrice(price);
+    if (!url || model === 'traditional') {
+      return undefined;
+    }
+
+    const history = this.historyByUrlMap.get(url)?.history;
+    if (!history || history.length === 0) {
+      return undefined;
+    }
+
+    const targetDate = selectedDate || this.availableDates[this.availableDates.length - 1];
+    const boundedHistory = targetDate
+      ? history.filter((entry) => entry.date <= targetDate)
+      : [...history];
+    const points = boundedHistory.slice(-dayCount).map((entry) => {
+      return this.getMetricValueForPoint(entry, model);
+    });
+
+    if (points.length < 2 || points.some((value) => !Number.isFinite(value))) {
+      return undefined;
+    }
+
+    const first = points[0];
+    const last = points[points.length - 1];
+    const totalChange = first !== 0 ? +(((last - first) / first) * 100).toFixed(2) : 0;
+
+    return {
+      data: points,
+      totalChange,
+    };
+  }
+
   @action
   syncMappingsFromPrices() {
     this.migrateLegacyHistoryToUrlCache();
@@ -413,17 +451,66 @@ export class PoeDbPriceStore {
     });
   }
 
-  private getMappedUrlForExternalPrice(price: IExternalPrice) {
+  getMappedUrlForExternalPrice(
+    price: Pick<
+      IExternalPrice,
+      | 'name'
+      | 'quality'
+      | 'links'
+      | 'level'
+      | 'corrupted'
+      | 'frameType'
+      | 'variant'
+      | 'elder'
+      | 'shaper'
+      | 'ilvl'
+      | 'tier'
+      | 'icon'
+    >
+  ) {
     const key = this.getItemKey(price);
     const mapping = this.mappings.find((m) => m.itemKey === key);
     return mapping?.url;
+  }
+
+  private getMetricValueForPoint(point: IPoeDbPriceHistoryRow, model: PricingModel): number {
+    switch (model) {
+      case 'poedb_rate':
+        return point.rate;
+      case 'poedb_open':
+        return point.open;
+      case 'poedb_close':
+        return point.close;
+      case 'poedb_low':
+        return point.low;
+      case 'poedb_high':
+        return point.high;
+      default:
+        return 0;
+    }
   }
 
   private get historyByUrlMap() {
     return new Map(this.urlHistories.map((entry) => [entry.url, entry]));
   }
 
-  private getItemKey(item: IExternalPrice) {
+  private getItemKey(
+    item: Pick<
+      IExternalPrice,
+      | 'name'
+      | 'quality'
+      | 'links'
+      | 'level'
+      | 'corrupted'
+      | 'frameType'
+      | 'variant'
+      | 'elder'
+      | 'shaper'
+      | 'ilvl'
+      | 'tier'
+      | 'icon'
+    >
+  ) {
     return [
       item.name,
       item.quality ?? 0,
