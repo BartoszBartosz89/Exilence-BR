@@ -51,7 +51,7 @@ export function itemName(
           <ItemNameCell
             value={value}
             frameType={data.row.original.frameType}
-            poeNinjaUrl={data.row.original.detailsUrl}
+            pricedItem={data.row.original}
           />
         );
       },
@@ -179,7 +179,7 @@ export function sparkLine(options: { accessor: string; header: string }): Column
     // eslint-disable-next-line react/display-name
     Cell: (data: any) => {
       const value = data.row.original['sparkLine'];
-      return <SparklineCell sparkline={value} id={data.row.id} />;
+      return <SparklineCell sparkline={value} pricedItem={data.row.original} id={data.row.id} />;
     },
   };
 }
@@ -266,13 +266,31 @@ const ItemIconCell = ({ value, frameType }: ItemIconCellProps) => {
 type ItemNameCellProps = {
   value: string;
   frameType: number;
-  poeNinjaUrl?: string;
+  pricedItem: IPricedItem;
 };
 
-const ItemNameCell = ({ value, frameType, poeNinjaUrl }: ItemNameCellProps) => {
+const ItemNameCell = ({ value, frameType, pricedItem }: ItemNameCellProps) => {
   const classes = useStyles();
   const rarityColor = rarityColors[getRarity(frameType)];
   const { t } = useTranslation();
+  const { poeDbPriceStore } = useStores();
+  const poedbLookupItem = {
+    name: pricedItem.name,
+    quality: pricedItem.quality,
+    links: pricedItem.links,
+    level: pricedItem.level,
+    corrupted: pricedItem.corrupted,
+    frameType: pricedItem.frameType,
+    variant: pricedItem.variant,
+    elder: pricedItem.elder,
+    shaper: pricedItem.shaper,
+    ilvl: pricedItem.ilvl,
+    tier: pricedItem.tier,
+    icon: pricedItem.icon,
+  };
+  const externalUrl =
+    poeDbPriceStore.getMappedUrlForExternalPrice(poedbLookupItem) || pricedItem.detailsUrl;
+  const tooltip = externalUrl?.includes('poedb.tw') ? 'Open on PoEDB' : t('label.open_on_ninja');
 
   return (
     <Box display="flex" width={1} alignItems="center" justifyContent="space-between">
@@ -286,12 +304,12 @@ const ItemNameCell = ({ value, frameType, poeNinjaUrl }: ItemNameCellProps) => {
           {value}
         </span>
       </Tooltip>
-      {poeNinjaUrl && (
-        <Tooltip title={t('label.open_on_ninja') || ''} placement="bottom">
+      {externalUrl && (
+        <Tooltip title={tooltip || ''} placement="bottom">
           <IconButton
             size="small"
             className={classes.inlineIcon}
-            onClick={() => openCustomLink(poeNinjaUrl)}
+            onClick={() => openCustomLink(externalUrl)}
           >
             <TimelineIcon classes={{ root: classes.iconRoot }} />
           </IconButton>
@@ -485,11 +503,35 @@ const ItemQuantityCell = ({ quantity, diff }: ItemQuantityCellProps) => {
 type SparklineCellProps = {
   id: string;
   sparkline?: ISparkLineDetails;
+  pricedItem: IPricedItem;
 };
 
-const SparklineCell = ({ sparkline, id }: SparklineCellProps) => {
+const SparklineCell = ({ sparkline, pricedItem, id }: SparklineCellProps) => {
   const classes = useStyles();
-  const data = sparkline ? formatSparklineChartData(sparkline.data) : undefined;
+  const { settingStore, poeDbPriceStore } = useStores();
+  const activeSparkline =
+    settingStore.pricingModel !== 'traditional'
+      ? poeDbPriceStore.getSparklineDetailsForExternalPrice(
+          {
+            name: pricedItem.name,
+            quality: pricedItem.quality,
+            links: pricedItem.links,
+            level: pricedItem.level,
+            corrupted: pricedItem.corrupted,
+            frameType: pricedItem.frameType,
+            variant: pricedItem.variant,
+            elder: pricedItem.elder,
+            shaper: pricedItem.shaper,
+            ilvl: pricedItem.ilvl,
+            tier: pricedItem.tier,
+            icon: pricedItem.icon,
+            count: 1,
+          },
+          settingStore.pricingModel,
+          settingStore.poedbPricingDate
+        )
+      : sparkline;
+  const data = activeSparkline ? formatSparklineChartData(activeSparkline.data) : undefined;
   return (
     <>
       {data && (
@@ -504,16 +546,14 @@ const SparklineCell = ({ sparkline, id }: SparklineCellProps) => {
           />
           <span
             className={clsx(classes.ellipsis, {
-              [classes.positiveChange]: sparkline && sparkline.totalChange > 0,
-              [classes.negativeChange]: sparkline && sparkline.totalChange < 0,
+              [classes.positiveChange]: activeSparkline && activeSparkline.totalChange > 0,
+              [classes.negativeChange]: activeSparkline && activeSparkline.totalChange < 0,
             })}
           >
-            {sparkline?.totalChange} %
+            {activeSparkline?.totalChange} %
           </span>
         </Box>
       )}
     </>
   );
 };
-
-
