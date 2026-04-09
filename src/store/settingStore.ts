@@ -11,6 +11,7 @@ export type Currency = 'chaos' | 'exalt' | 'divine';
 export type AppExitTypes = 'minimize-to-tray' | 'exit';
 export type PricingModel =
   | 'traditional'
+  | 'poedb_rate'
   | 'poedb_open'
   | 'poedb_close'
   | 'poedb_low'
