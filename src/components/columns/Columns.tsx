@@ -11,6 +11,7 @@ import { useStores } from '../..';
 import { itemColors, primaryLighter, rarityColors } from '../../assets/themes/exilence-theme';
 import { ISparkLineDetails } from '../../interfaces/external-price.interface';
 import { IPricedItem } from '../../interfaces/priced-item.interface';
+import { poeDbService } from '../../services/poedb.service';
 import { ICompactTab } from '../../interfaces/stash.interface';
 import { getRarity, parseTabNames } from '../../utils/item.utils';
 import { formatSparklineChartData, getRawPriceFromPricedItem } from '../../utils/price.utils';
@@ -289,7 +290,12 @@ const ItemNameCell = ({ value, frameType, pricedItem }: ItemNameCellProps) => {
     icon: pricedItem.icon,
   };
   const externalUrl =
-    poeDbPriceStore.getMappedUrlForExternalPrice(poedbLookupItem) || pricedItem.detailsUrl;
+    poeDbService.getHardcodedUrlForItem({
+      name: pricedItem.name,
+      baseType: pricedItem.typeLine || pricedItem.name,
+    }) ||
+    poeDbPriceStore.getMappedUrlForExternalPrice(poedbLookupItem) ||
+    pricedItem.detailsUrl;
   const tooltip = externalUrl?.includes('poedb.tw') ? 'Open on PoEDB' : t('label.open_on_ninja');
 
   return (

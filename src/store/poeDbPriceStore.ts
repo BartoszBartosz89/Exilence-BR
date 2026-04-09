@@ -124,7 +124,8 @@ export class PoeDbPriceStore {
     model: PricingModel,
     selectedDate?: string
   ): number | undefined {
-    const url = this.getMappedUrlForExternalPrice(price);
+    const url =
+      this.getMappedUrlForExternalPrice(price) || poeDbService.getHardcodedUrlForItem(price);
     if (!url) {
       return undefined;
     }
@@ -164,7 +165,8 @@ export class PoeDbPriceStore {
     selectedDate?: string,
     dayCount: number = 7
   ) {
-    const url = this.getMappedUrlForExternalPrice(price);
+    const url =
+      this.getMappedUrlForExternalPrice(price) || poeDbService.getHardcodedUrlForItem(price);
     if (!url || model === 'traditional') {
       return undefined;
     }
@@ -468,8 +470,7 @@ export class PoeDbPriceStore {
       | 'icon'
     >
   ) {
-    const key = this.getItemKey(price);
-    const mapping = this.mappings.find((m) => m.itemKey === key);
+    const mapping = this.findMappingForPrice(price);
     return mapping?.url;
   }
 
@@ -492,6 +493,44 @@ export class PoeDbPriceStore {
 
   private get historyByUrlMap() {
     return new Map(this.urlHistories.map((entry) => [entry.url, entry]));
+  }
+
+  private findMappingForPrice(
+    price: Pick<
+      IExternalPrice,
+      | 'name'
+      | 'quality'
+      | 'links'
+      | 'level'
+      | 'corrupted'
+      | 'frameType'
+      | 'variant'
+      | 'elder'
+      | 'shaper'
+      | 'ilvl'
+      | 'tier'
+      | 'icon'
+    >
+  ) {
+    const exactKey = this.getItemKey(price);
+    const exactMatch = this.mappings.find((m) => m.itemKey === exactKey);
+    if (exactMatch) {
+      return exactMatch;
+    }
+
+    const keyWithoutIcon = this.getItemKey({
+      ...price,
+      icon: '',
+    });
+
+    return this.mappings.find((mapping) => {
+      const parts = mapping.itemKey.split('|');
+      if (parts.length < 12) {
+        return false;
+      }
+      const normalizedMappingKey = [...parts.slice(0, 11), ''].join('|');
+      return normalizedMappingKey === keyWithoutIcon;
+    });
   }
 
   private getItemKey(
