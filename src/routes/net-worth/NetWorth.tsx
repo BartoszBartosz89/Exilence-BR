@@ -38,6 +38,7 @@ const NetWorth = () => {
   const { activeGroup } = signalrStore!;
   const { t } = useTranslation();
   const classes = useStyles();
+  const poedbModelActive = settingStore.pricingModel !== 'traditional';
 
   const loading = () => {
     return !uiStateStore.profilesLoaded || uiStateStore.isValidating;
@@ -303,16 +304,24 @@ const NetWorth = () => {
                         {uiStateStore!.timeSincePricesFetchedLabel && (
                           <>
                             <Typography variant="body2" className={classes.creditText}>
-                              {t('label.prices_fetched_from')}
+                              {poedbModelActive
+                                ? 'Pricing links/history sourced from '
+                                : t('label.prices_fetched_from')}
                               <a
                                 className={classes.inlineLink}
-                                href="https://poe.ninja"
+                                href={
+                                  poedbModelActive ? 'https://poedb.tw/us/' : 'https://poe.ninja'
+                                }
                                 onClick={(e) => openLink(e)}
                               >
-                                https://poe.ninja
+                                {poedbModelActive ? 'https://poedb.tw/us/' : 'https://poe.ninja'}
                               </a>
-                              &nbsp;
-                              {uiStateStore!.timeSincePricesFetchedLabel}
+                              {!poedbModelActive && (
+                                <>
+                                  &nbsp;
+                                  {uiStateStore!.timeSincePricesFetchedLabel}
+                                </>
+                              )}
                             </Typography>
                           </>
                         )}
