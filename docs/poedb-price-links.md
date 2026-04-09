@@ -34,6 +34,8 @@ Available commands:
 npm run poedb:generate-links
 npm run poedb:generate-links:all
 npm run poedb:generate-links:report
+npm run poedb:validate-links
+npm run poedb:prune-invalid-links
 ```
 
 Equivalent direct usage:
@@ -68,6 +70,12 @@ A run writes `scripts/poedb-links-report.json` with:
 
 You can keep this file for diagnostics or delete it after review.
 
+Validation writes `scripts/poedb-links-validation-report.json` with:
+
+- current mapped count
+- missing items
+- invalid mappings that should be pruned before refilling
+
 ## In-app behavior
 
 In PoEDB tab:
@@ -88,9 +96,14 @@ So partial coverage is expected and not a runtime failure.
    - `npm run poedb:generate-links`
 2. (Optional) Retry unresolved subset:
    - `npm run poedb:generate-links:report`
-3. Commit updated `src/data/poedb-item-links.generated.json`.
-4. Release the app with the updated `src/data/poedb-item-links.generated.json`.
-5. In app, pull history from the PoEDB tab when you want to refresh OHLC data.
+3. Validate the shipped map:
+   - `npm run poedb:validate-links`
+4. If validation reports bad mappings, prune and refill them:
+   - `npm run poedb:prune-invalid-links`
+   - `npm run poedb:generate-links`
+5. Commit updated `src/data/poedb-item-links.generated.json`.
+6. Release the app with the updated `src/data/poedb-item-links.generated.json`.
+7. In app, pull history from the PoEDB tab when you want to refresh OHLC data.
 
 
 
