@@ -35,6 +35,7 @@ import initSentry from './config/sentry';
 import useStyles from './index.styles';
 import BulkSell from './routes/bulk-sell/BulkSell';
 import Login from './routes/login/Login';
+import NetWorthArchives from './routes/net-worth-archives/NetWorthArchives';
 import NetWorth from './routes/net-worth/NetWorth';
 import Settings from './routes/settings/Settings';
 import { electronService } from './services/electron.service';
@@ -106,6 +107,7 @@ const App = ({ error }: Props) => {
                   <DrawerWrapperContainer>
                     <ToolbarContainer />
                     <Route path="/net-worth" component={NetWorth} />
+                    <Route path="/net-worth-archives" component={NetWorthArchives} />
                     <Route path="/settings" component={Settings} />
                     <Route path="/bulk-sell" component={BulkSell} />
                     <Route
@@ -142,6 +144,7 @@ const renderApp = () => {
   Promise.all([
     hydrate('account', rootStore.accountStore),
     hydrate('customPrice', rootStore.customPriceStore),
+    hydrate('netWorthArchive', rootStore.netWorthArchiveStore),
     hydrate('uiState', rootStore.uiStateStore),
     hydrate('league', rootStore.leagueStore),
     hydrate('setting', rootStore.settingStore),
