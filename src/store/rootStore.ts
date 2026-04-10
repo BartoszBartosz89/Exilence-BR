@@ -4,6 +4,7 @@ import { SignalrHub } from './domains/signalr-hub';
 import { LeagueStore } from './leagueStore';
 import { LogStore } from './logStore';
 import { MigrationStore } from './migrationStore';
+import { NetWorthArchiveStore } from './netWorthArchiveStore';
 import { NotificationStore } from './notificationStore';
 import { OverlayStore } from './overlayStore';
 import { PriceStore } from './priceStore';
@@ -22,6 +23,7 @@ export class RootStore {
   settingStore: SettingStore;
   routeStore: RouteStore;
   migrationStore: MigrationStore;
+  netWorthArchiveStore: NetWorthArchiveStore;
   updateStore: UpdateStore;
   leagueStore: LeagueStore;
   notificationStore: NotificationStore;
@@ -40,6 +42,7 @@ export class RootStore {
     this.settingStore = new SettingStore(this);
     this.routeStore = new RouteStore(this);
     this.migrationStore = new MigrationStore(this);
+    this.netWorthArchiveStore = new NetWorthArchiveStore(this);
     this.updateStore = new UpdateStore(this);
     this.leagueStore = new LeagueStore(this);
     this.notificationStore = new NotificationStore(this);
