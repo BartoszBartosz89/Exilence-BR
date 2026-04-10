@@ -2,6 +2,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import BurstModeIcon from '@mui/icons-material/BurstMode';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import InventoryIcon from '@mui/icons-material/Inventory';
 import SettingsIcon from '@mui/icons-material/Settings';
 import {
   Divider,
@@ -70,6 +71,19 @@ const NavigationMenu = ({ open, toggleSidenav, handleRedirect }: NavigationMenuP
             </Tooltip>
           </ListItemIcon>
           <ListItemText primary={t('title.net_worth')} />
+        </ListItem>
+        <ListItem
+          button
+          key="net-worth-archives"
+          selected={location.pathname === '/net-worth-archives'}
+          onClick={() => handleRedirect('/net-worth-archives')}
+        >
+          <ListItemIcon>
+            <Tooltip title="Net worth archives" placement="right">
+              <InventoryIcon />
+            </Tooltip>
+          </ListItemIcon>
+          <ListItemText primary="Net worth archives" />
         </ListItem>
         <ListItem
           button
