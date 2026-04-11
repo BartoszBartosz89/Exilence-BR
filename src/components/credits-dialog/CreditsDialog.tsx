@@ -16,6 +16,8 @@ const creditsMarkdown = `
 
 - Blight Ravaged and economy tooling updates
 - Ongoing league-to-league maintenance for this fork
+- PoEDB-driven pricing, history tracking and link maintenance
+- Net worth archive workflows for saved and imported economy snapshots
 
 ## Acknowledgements
 

@@ -5,8 +5,10 @@ import { INetWorthArchive } from '../interfaces/net-worth-archive.interface';
 import { INetWorthArchiveItem } from '../interfaces/net-worth-archive-item.interface';
 import { findPriceForItem } from '../utils/price.utils';
 import {
+  buildArchiveSourceFromParsedCsv,
+  buildArchiveSourceFromPricedItems,
   buildDefaultArchiveName,
-  createArchiveItemsFromPricedItems,
+  getArchiveSources,
   mergeArchiveItems,
   parseArchiveCsv,
 } from '../utils/net-worth-archive.utils';
@@ -38,7 +40,7 @@ export class NetWorthArchiveStore {
       return [];
     }
 
-    return archive.items.map((item) => {
+    return this.getMergedArchiveItems(archive).map((item) => {
       const liveCalculated = this.getLiveCalculated(item);
 
       return {
@@ -57,7 +59,10 @@ export class NetWorthArchiveStore {
       return undefined;
     }
 
-    const snapshotTotal = archive.items.reduce((sum, item) => sum + item.snapshotTotal, 0);
+    const snapshotTotal = this.activeArchiveItems.reduce(
+      (sum, item) => sum + item.snapshotTotal,
+      0
+    );
     const liveTotal = this.activeArchiveItems.reduce((sum, item) => sum + (item.liveTotal || 0), 0);
 
     return { snapshotTotal, liveTotal };
@@ -77,18 +82,23 @@ export class NetWorthArchiveStore {
     const sourceLabel = activeGroup
       ? activeGroup.name || 'Group snapshot'
       : activeProfile?.name || 'Net worth';
+    const createdAt = new Date().toISOString();
 
     const archive: INetWorthArchive = {
       uuid: uuidv4(),
       name: buildDefaultArchiveName(sourceLabel),
-      createdAt: new Date().toISOString(),
-      sourceDate: new Date().toISOString(),
-      origin: 'saved',
-      pricingModel: settingStore.pricingModel,
-      poedbPricingDate: settingStore.poedbPricingDate,
+      createdAt,
       currency: settingStore.currency,
-      sourceLabels: [sourceLabel],
-      items: mergeArchiveItems(createArchiveItemsFromPricedItems(items, sourceLabel)),
+      sources: [
+        buildArchiveSourceFromPricedItems(items, sourceLabel, {
+          createdAt,
+          sourceDate: createdAt,
+          origin: 'saved',
+          pricingModel: settingStore.pricingModel,
+          poedbPricingDate: settingStore.poedbPricingDate,
+          currency: settingStore.currency,
+        }),
+      ],
     };
 
     this.archives.unshift(archive);
@@ -102,27 +112,80 @@ export class NetWorthArchiveStore {
       parsed: parseArchiveCsv(file.text, file.name),
     }));
 
-    const items = mergeArchiveItems(parsedFiles.flatMap((entry) => entry.parsed.items));
-    const firstDetectedDate = parsedFiles.find((entry) => entry.parsed.detectedDate)?.parsed
-      .detectedDate;
+    const createdAt = new Date().toISOString();
     const archive: INetWorthArchive = {
       uuid: uuidv4(),
       name:
         files.length === 1
           ? buildDefaultArchiveName(files[0].name.replace(/\.csv$/i, ''))
           : buildDefaultArchiveName(`Imported ${files.length} files`),
-      createdAt: new Date().toISOString(),
-      sourceDate: firstDetectedDate || this.toIsoOrUndefined(files[0]?.lastModified),
-      origin: 'imported',
-      pricingModel: 'traditional',
-      poedbPricingDate: undefined,
+      createdAt,
       currency: this.rootStore.settingStore.currency,
-      sourceLabels: files.map((file) => file.name),
-      items,
+      sources: parsedFiles.map((entry) =>
+        buildArchiveSourceFromParsedCsv(entry.file.name, entry.parsed, {
+          createdAt,
+          sourceDate: entry.parsed.detectedDate || this.toIsoOrUndefined(entry.file.lastModified),
+          currency: this.rootStore.settingStore.currency,
+        })
+      ),
     };
 
     this.archives.unshift(archive);
     this.activeArchiveId = archive.uuid;
+  }
+
+  @action
+  addCurrentSnapshotToArchive(id: string) {
+    const archive = this.archives.find((entry) => entry.uuid === id);
+    if (!archive) {
+      return;
+    }
+
+    const { accountStore, signalrStore, settingStore } = this.rootStore;
+    const activeProfile = accountStore.getSelectedAccount.activeProfile;
+    const activeGroup = signalrStore.activeGroup;
+    const items = activeGroup ? activeGroup.items : activeProfile?.items || [];
+    const sourceLabel = activeGroup
+      ? activeGroup.name || 'Group snapshot'
+      : activeProfile?.name || 'Net worth';
+    const createdAt = new Date().toISOString();
+
+    archive.sources = [
+      ...getArchiveSources(archive),
+      buildArchiveSourceFromPricedItems(items, sourceLabel, {
+        createdAt,
+        sourceDate: createdAt,
+        origin: 'saved',
+        pricingModel: settingStore.pricingModel,
+        poedbPricingDate: settingStore.poedbPricingDate,
+        currency: archive.currency,
+      }),
+    ];
+  }
+
+  @action
+  addArchiveFilesToArchive(id: string, files: ImportedArchiveFile[]) {
+    const archive = this.archives.find((entry) => entry.uuid === id);
+    if (!archive || files.length === 0) {
+      return;
+    }
+
+    const parsedFiles = files.map((file) => ({
+      file,
+      parsed: parseArchiveCsv(file.text, file.name),
+    }));
+
+    const createdAt = new Date().toISOString();
+    archive.sources = [
+      ...getArchiveSources(archive),
+      ...parsedFiles.map((entry) =>
+        buildArchiveSourceFromParsedCsv(entry.file.name, entry.parsed, {
+          createdAt,
+          sourceDate: entry.parsed.detectedDate || this.toIsoOrUndefined(entry.file.lastModified),
+          currency: archive.currency,
+        })
+      ),
+    ];
   }
 
   @action
@@ -140,6 +203,10 @@ export class NetWorthArchiveStore {
     if (archive && nextName.length > 0) {
       archive.name = nextName;
     }
+  }
+
+  getMergedArchiveItems(archive: INetWorthArchive) {
+    return mergeArchiveItems(getArchiveSources(archive).flatMap((source) => source.items));
   }
 
   private getLiveCalculated(item: INetWorthArchiveItem) {
