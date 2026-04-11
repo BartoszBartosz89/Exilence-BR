@@ -33,6 +33,8 @@ import { useLocalStorage } from '../../hooks/use-local-storage';
 import ArchiveItemTable from './ArchiveItemTable';
 import useStyles from './NetWorthArchives.styles';
 
+type FileActionMode = 'create' | 'add';
+
 const NetWorthArchives = () => {
   const { netWorthArchiveStore, settingStore, accountStore, signalrStore } = useStores();
   const classes = useStyles();
@@ -44,6 +46,7 @@ const NetWorthArchives = () => {
   const [renameValue, setRenameValue] = useState('');
   const [deleteArchiveId, setDeleteArchiveId] = useState<string | undefined>(undefined);
   const [archiveSearch, setArchiveSearch] = useState('');
+  const [fileActionMode, setFileActionMode] = useState<FileActionMode>('create');
   const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage(
     'netWorthArchive:sidebarCollapsed',
     false
@@ -61,6 +64,15 @@ const NetWorthArchives = () => {
   }, [activeArchive?.uuid, activeArchive?.name]);
 
   const handleImportClick = () => {
+    setFileActionMode('create');
+    fileInputRef.current?.click();
+  };
+
+  const handleAddFileClick = () => {
+    if (!activeArchive) {
+      return;
+    }
+    setFileActionMode('add');
     fileInputRef.current?.click();
   };
 
@@ -78,7 +90,11 @@ const NetWorthArchives = () => {
       }))
     );
 
-    netWorthArchiveStore!.importArchiveFiles(loadedFiles);
+    if (fileActionMode === 'add' && activeArchive) {
+      netWorthArchiveStore!.addArchiveFilesToArchive(activeArchive.uuid, loadedFiles);
+    } else {
+      netWorthArchiveStore!.importArchiveFiles(loadedFiles);
+    }
     event.target.value = '';
   };
 
@@ -115,6 +131,14 @@ const NetWorthArchives = () => {
       .slice()
       .filter((archive) => archive.name.toLowerCase().includes(query));
   }, [archiveSearch, netWorthArchiveStore!.archives.length, activeArchive?.uuid]);
+
+  const activeArchiveItemCount = activeArchive
+    ? netWorthArchiveStore!.getMergedArchiveItems(activeArchive).length
+    : 0;
+  const getArchiveItemCount = (archive: any) =>
+    netWorthArchiveStore!.getMergedArchiveItems(archive).length;
+  const getArchiveSourceCount = (archive: any) => archive.sources?.length || 0;
+  const latestSource = activeArchive?.sources?.[activeArchive.sources?.length - 1];
 
   return (
     <>
@@ -203,7 +227,7 @@ const NetWorthArchives = () => {
                           secondary={
                             <Box className={classes.archiveMeta}>
                               <Typography variant="body2" color="text.secondary">
-                                {archive.items.length} items
+                                {getArchiveItemCount(archive)} items
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
                                 {moment(archive.createdAt).format('YYYY-MM-DD')}
@@ -254,15 +278,35 @@ const NetWorthArchives = () => {
                 startIcon={<SaveIcon />}
                 onClick={() => netWorthArchiveStore!.saveCurrentNetWorthArchive()}
               >
-                Save current net worth
+                New archive from snapshot
               </Button>
               <Button
                 variant="contained"
                 startIcon={<UploadFileIcon />}
                 onClick={handleImportClick}
               >
-                Import CSV files
+                New archive from file
               </Button>
+              {!!activeArchive && (
+                <>
+                  <Button
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    onClick={() =>
+                      netWorthArchiveStore!.addCurrentSnapshotToArchive(activeArchive.uuid)
+                    }
+                  >
+                    Add snapshot to archive
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<UploadFileIcon />}
+                    onClick={handleAddFileClick}
+                  >
+                    Add file to archive
+                  </Button>
+                </>
+              )}
               <input
                 ref={fileInputRef}
                 hidden
@@ -287,15 +331,16 @@ const NetWorthArchives = () => {
                       <Box>
                         <Typography variant="h6">{activeArchive.name}</Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {activeArchive.origin === 'saved'
-                            ? 'Saved from app'
-                            : 'Imported from CSV'}{' '}
-                          • Pricing at save: {activeArchive.pricingModel}
-                          {activeArchive.poedbPricingDate
-                            ? ` • PoEDB date ${activeArchive.poedbPricingDate}`
+                          {getArchiveSourceCount(activeArchive)} sources • {activeArchiveItemCount}{' '}
+                          merged items
+                          {latestSource?.pricingModel
+                            ? ` • Latest pricing: ${latestSource.pricingModel}`
                             : ''}
-                          {activeArchive.sourceDate
-                            ? ` • Source date ${activeArchive.sourceDate}`
+                          {latestSource?.poedbPricingDate
+                            ? ` • PoEDB date ${latestSource.poedbPricingDate}`
+                            : ''}
+                          {latestSource?.sourceDate
+                            ? ` • Latest source date ${latestSource.sourceDate}`
                             : ''}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
