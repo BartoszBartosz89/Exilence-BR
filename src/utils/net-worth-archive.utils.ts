@@ -2,6 +2,7 @@ import moment from 'moment';
 import { v4 as uuidv4 } from 'uuid';
 import { INetWorthArchive } from '../interfaces/net-worth-archive.interface';
 import { INetWorthArchiveItem } from '../interfaces/net-worth-archive-item.interface';
+import { INetWorthArchiveSource } from '../interfaces/net-worth-archive-source.interface';
 import { IPricedItem } from '../interfaces/priced-item.interface';
 
 export type ParsedArchiveCsv = {
@@ -135,13 +136,85 @@ export function buildDefaultArchiveName(prefix: string) {
   return `${prefix} ${moment().format('YYYY-MM-DD HH:mm')}`;
 }
 
-export function summarizeArchive(archive: INetWorthArchive) {
-  const snapshotTotal = archive.items.reduce((sum, item) => sum + item.snapshotTotal, 0);
+export function buildArchiveSourceFromPricedItems(
+  items: IPricedItem[],
+  sourceLabel: string,
+  options: {
+    createdAt: string;
+    origin: 'saved' | 'imported';
+    pricingModel: any;
+    poedbPricingDate?: string;
+    currency: string;
+    sourceDate?: string;
+  }
+): INetWorthArchiveSource {
   return {
-    itemCount: archive.items.length,
-    quantity: archive.items.reduce((sum, item) => sum + (item.stackSize || 0), 0),
+    uuid: uuidv4(),
+    createdAt: options.createdAt,
+    sourceDate: options.sourceDate,
+    origin: options.origin,
+    pricingModel: options.pricingModel,
+    poedbPricingDate: options.poedbPricingDate,
+    currency: options.currency,
+    sourceLabel,
+    items: createArchiveItemsFromPricedItems(items, sourceLabel),
+  };
+}
+
+export function buildArchiveSourceFromParsedCsv(
+  sourceLabel: string,
+  parsed: ParsedArchiveCsv,
+  options: {
+    createdAt: string;
+    sourceDate?: string;
+    currency: string;
+  }
+): INetWorthArchiveSource {
+  return {
+    uuid: uuidv4(),
+    createdAt: options.createdAt,
+    sourceDate: options.sourceDate || parsed.detectedDate,
+    origin: 'imported',
+    pricingModel: 'traditional',
+    poedbPricingDate: undefined,
+    currency: options.currency,
+    sourceLabel,
+    items: parsed.items,
+  };
+}
+
+export function summarizeArchive(archive: INetWorthArchive) {
+  const items = mergeArchiveItems(getArchiveSources(archive).flatMap((source) => source.items));
+  const snapshotTotal = items.reduce((sum, item) => sum + item.snapshotTotal, 0);
+  return {
+    itemCount: items.length,
+    quantity: items.reduce((sum, item) => sum + (item.stackSize || 0), 0),
     snapshotTotal,
   };
+}
+
+export function getArchiveSources(archive: INetWorthArchive): INetWorthArchiveSource[] {
+  if (archive.sources?.length) {
+    return archive.sources;
+  }
+
+  if (!archive.items?.length) {
+    return [];
+  }
+
+  return [
+    {
+      uuid: uuidv4(),
+      createdAt: archive.createdAt,
+      sourceDate: archive.sourceDate,
+      origin: archive.origin || 'saved',
+      pricingModel: archive.pricingModel || 'traditional',
+      poedbPricingDate: archive.poedbPricingDate,
+      currency: archive.currency,
+      sourceLabel: archive.sourceLabels?.[0] || archive.name,
+      items: archive.items,
+    },
+  ];
 }
 
 function mapCsvRowToArchiveItem(
