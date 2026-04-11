@@ -1,9 +1,9 @@
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
-import SyncIcon from '@mui/icons-material/Sync';
 import {
   Alert,
   Box,
@@ -74,17 +74,6 @@ const PoeDbPricesSettings = () => {
       <Grid item xs={12}>
         <Box display="flex" flexWrap="wrap" gap={1} alignItems="center">
           <Button
-            variant="outlined"
-            startIcon={<SyncIcon />}
-            onClick={() => {
-              poeDbPriceStore.syncMappingsFromPrices();
-              setPage(0);
-            }}
-          >
-            Sync items from Prices tab
-          </Button>
-
-          <Button
             variant="contained"
             color="primary"
             startIcon={<CloudDownloadIcon />}
@@ -101,6 +90,19 @@ const PoeDbPricesSettings = () => {
             onClick={() => poeDbPriceStore.pullHistoryForResolvedItems(true)}
           >
             Full refresh
+          </Button>
+
+          <Button
+            variant="outlined"
+            color="secondary"
+            startIcon={<DeleteSweepIcon />}
+            disabled={poeDbPriceStore.pulling}
+            onClick={() => {
+              poeDbPriceStore.clearStoredSnapshots();
+              setPage(0);
+            }}
+          >
+            Clear stored snapshots
           </Button>
 
           {(poeDbPriceStore.resolving || poeDbPriceStore.pulling) && (

@@ -114,9 +114,50 @@ export class PoeDbPriceStore {
     return set.size;
   }
 
+  @computed
+  get historyByUrlMap() {
+    return new Map(this.urlHistories.map((entry) => [entry.url, entry]));
+  }
+
+  @computed
+  get mappingsByItemKey() {
+    return new Map(this.mappings.map((mapping) => [mapping.itemKey, mapping]));
+  }
+
+  @computed
+  get mappingsByNormalizedItemKey() {
+    const map = new Map<string, IPoeDbItemMapping>();
+
+    this.mappings.forEach((mapping) => {
+      const parts = mapping.itemKey.split('|');
+      if (parts.length >= 12) {
+        const normalizedKey = [...parts.slice(0, 11), ''].join('|');
+        if (!map.has(normalizedKey)) {
+          map.set(normalizedKey, mapping);
+        }
+      }
+    });
+
+    return map;
+  }
+
   @action
   setSelectedDate(date?: string) {
     this.selectedDate = date;
+  }
+
+  @action
+  clearStoredSnapshots() {
+    this.stopPull();
+    this.urlHistories = [];
+    this.selectedDate = undefined;
+    this.error = undefined;
+    this.pullProgress = {
+      total: 0,
+      done: 0,
+      success: 0,
+      skipped: 0,
+    };
   }
 
   getMetricPriceForExternalPrice(
@@ -487,10 +528,6 @@ export class PoeDbPriceStore {
     }
   }
 
-  private get historyByUrlMap() {
-    return new Map(this.urlHistories.map((entry) => [entry.url, entry]));
-  }
-
   private findMappingForPrice(
     price: Pick<
       IExternalPrice,
@@ -509,7 +546,7 @@ export class PoeDbPriceStore {
     >
   ) {
     const exactKey = this.getItemKey(price);
-    const exactMatch = this.mappings.find((m) => m.itemKey === exactKey);
+    const exactMatch = this.mappingsByItemKey.get(exactKey);
     if (exactMatch) {
       return exactMatch;
     }
@@ -519,14 +556,7 @@ export class PoeDbPriceStore {
       icon: '',
     });
 
-    return this.mappings.find((mapping) => {
-      const parts = mapping.itemKey.split('|');
-      if (parts.length < 12) {
-        return false;
-      }
-      const normalizedMappingKey = [...parts.slice(0, 11), ''].join('|');
-      return normalizedMappingKey === keyWithoutIcon;
-    });
+    return this.mappingsByNormalizedItemKey.get(keyWithoutIcon);
   }
 
   private getItemKey(

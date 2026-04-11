@@ -5,6 +5,7 @@ import moment from 'moment';
 import { forkJoin, from, interval, of } from 'rxjs';
 import { catchError, concatMap, map, switchMap } from 'rxjs/operators';
 import { IExternalPrice } from '../interfaces/external-price.interface';
+import { IPricedItem } from '../interfaces/priced-item.interface';
 import { filterPrices, findPrice } from '../utils/price.utils';
 import { ILeaguePriceSource } from './../interfaces/league-price-source.interface';
 import { poeninjaService } from './../services/poe-ninja.service';
@@ -90,6 +91,42 @@ export class PriceStore {
     return effectivePrice;
   }
 
+  @computed
+  get activePriceExactMap() {
+    const prices = this.activePricesWithCustomValues || [];
+    return new Map(prices.map((price) => [this.getLookupKey(price), price]));
+  }
+
+  @computed
+  get activePriceNameFrameTypeMap() {
+    const prices = this.activePricesWithCustomValues || [];
+    const map = new Map<string, IExternalPrice>();
+
+    prices.forEach((price) => {
+      const key = this.getNameFrameTypeKey(price.name, price.frameType);
+      if (!map.has(key)) {
+        map.set(key, price);
+      }
+    });
+
+    return map;
+  }
+
+  @computed
+  get activePriceNameMap() {
+    const prices = this.activePricesWithCustomValues || [];
+    const map = new Map<string, IExternalPrice>();
+
+    prices.forEach((price) => {
+      const key = price.name || '';
+      if (!map.has(key)) {
+        map.set(key, price);
+      }
+    });
+
+    return map;
+  }
+
   resolveEffectivePriceValue(price: IExternalPrice): number {
     if (price.customPrice && price.customPrice > 0) {
       return price.customPrice;
@@ -109,6 +146,29 @@ export class PriceStore {
 
     return price.calculated || 0;
   }
+
+  getMatchedActivePriceForItem(item: Pick<
+    IPricedItem,
+    | 'name'
+    | 'quality'
+    | 'links'
+    | 'level'
+    | 'corrupted'
+    | 'frameType'
+    | 'variant'
+    | 'elder'
+    | 'shaper'
+    | 'ilvl'
+    | 'tier'
+    | 'icon'
+  >) {
+    return (
+      this.activePriceExactMap.get(this.getLookupKey(item)) ||
+      this.activePriceNameFrameTypeMap.get(this.getNameFrameTypeKey(item.name, item.frameType)) ||
+      this.activePriceNameMap.get(item.name || '')
+    );
+  }
+
   @computed get customPricesTableData() {
     const selectedLeagueId = this.rootStore.uiStateStore.selectedPriceTableLeagueId;
     const activeLeagueId = this.rootStore.accountStore.getSelectedAccount.activePriceLeague?.id;
@@ -263,5 +323,42 @@ export class PriceStore {
   getPricesforLeaguesFail(e: AxiosError | Error) {
     this.isUpdatingPrices = false;
     this.rootStore.notificationStore.createNotification('get_prices_for_leagues', 'error', true, e);
+  }
+
+  private getLookupKey(
+    item: Pick<
+      IExternalPrice,
+      | 'name'
+      | 'quality'
+      | 'links'
+      | 'level'
+      | 'corrupted'
+      | 'frameType'
+      | 'variant'
+      | 'elder'
+      | 'shaper'
+      | 'ilvl'
+      | 'tier'
+      | 'icon'
+    >
+  ) {
+    return [
+      item.name,
+      item.quality ?? 0,
+      item.links ?? 0,
+      item.level ?? 0,
+      item.corrupted ? 1 : 0,
+      item.frameType ?? 0,
+      item.variant || '',
+      item.elder ? 1 : 0,
+      item.shaper ? 1 : 0,
+      item.ilvl ?? 0,
+      item.tier ?? 0,
+      item.icon || '',
+    ].join('|');
+  }
+
+  private getNameFrameTypeKey(name?: string, frameType?: number) {
+    return `${name || ''}|${frameType ?? 0}`;
   }
 }

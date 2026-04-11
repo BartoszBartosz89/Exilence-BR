@@ -86,7 +86,9 @@
     "poedb:generate-links:all": "node scripts/generate-poedb-links.js Standard 4 --mode=all",
     "poedb:generate-links:report": "node scripts/generate-poedb-links.js Standard 4 --mode=report",
     "poedb:validate-links": "node scripts/validate-poedb-links.js Standard 4",
-    "poedb:prune-invalid-links": "node scripts/prune-invalid-poedb-links.js"
+    "poedb:prune-invalid-links": "node scripts/prune-invalid-poedb-links.js",
+    "poedb:league-start": "node scripts/poedb-league-start.js Standard 4 --mode=missing",
+    "poedb:league-start:all": "node scripts/poedb-league-start.js Standard 4 --mode=all"
   },
   "eslintConfig": {
     "extends": "react-app"

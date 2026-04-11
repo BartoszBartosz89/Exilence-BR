@@ -3,7 +3,6 @@ import { persist } from 'mobx-persist';
 import { v4 as uuidv4 } from 'uuid';
 import { INetWorthArchive } from '../interfaces/net-worth-archive.interface';
 import { INetWorthArchiveItem } from '../interfaces/net-worth-archive-item.interface';
-import { findPriceForItem } from '../utils/price.utils';
 import {
   buildArchiveSourceFromParsedCsv,
   buildArchiveSourceFromPricedItems,
@@ -223,11 +222,7 @@ export class NetWorthArchiveStore {
       return customPrice;
     }
 
-    const livePrice = this.rootStore.priceStore.activePricesWithCustomValues || [];
-    const matched =
-      findPriceForItem(livePrice, item) ||
-      livePrice.find((price) => price.name === item.name && price.frameType === item.frameType) ||
-      livePrice.find((price) => price.name === item.name);
+    const matched = this.rootStore.priceStore.getMatchedActivePriceForItem(item);
 
     if (!matched) {
       return undefined;
