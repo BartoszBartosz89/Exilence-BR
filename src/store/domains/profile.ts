@@ -30,7 +30,6 @@ import {
   excludeInvalidItems,
   excludeLegacyMaps,
   findPrice,
-  findPriceForItem,
 } from '../../utils/price.utils';
 import { mapProfileToApiProfile } from '../../utils/profile.utils';
 import {
@@ -331,13 +330,7 @@ export class Profile {
       };
     }
 
-    const activePrices = rootStore.priceStore.activePricesWithCustomValues || [];
-    const matchedLivePrice =
-      findPriceForItem(activePrices, item) ||
-      activePrices.find(
-        (price) => price.name === item.name && price.frameType === item.frameType
-      ) ||
-      activePrices.find((price) => price.name === item.name);
+    const matchedLivePrice = rootStore.priceStore.getMatchedActivePriceForItem(item);
 
     if (!matchedLivePrice) {
       return item;

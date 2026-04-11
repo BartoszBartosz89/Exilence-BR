@@ -26,6 +26,8 @@ This fork focuses on Blight Ravaged gameplay and league-ready economy tooling.
 - Added a Net Worth Archives workspace for saving and importing frozen net worth views.
 - Added archive search, rename, quick delete, a collapsible archive sidebar and cleaner archive metadata layout.
 - Added support for building one archive from multiple files or added snapshots, with merged quantities and weighted snapshot pricing.
+- Added a repo-side PoEDB league start workflow so bundled links can be refreshed before release instead of asking users to sync them manually.
+- Added a Clear stored snapshots action in the PoEDB tab so users can wipe old PoEDB history and pull fresh league data.
 `;
 
 const WhatsNewDialog = ({ open, onClose }: any) => {

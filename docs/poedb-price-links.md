@@ -83,6 +83,7 @@ In PoEDB tab:
 - Bundled hardcoded links are applied automatically from the shipped map when price items are available.
 - Pull missing dates fetches only URLs where latest saved date is older than today.
 - Full refresh forces fetch for all mapped URLs.
+- Clear stored snapshots wipes saved PoEDB history dates so users can start a fresh league pull without touching the bundled mappings.
 - Pulling is deduplicated by PoEDB URL (one request can update many item rows).
 
 ## Why not all items resolve
@@ -92,18 +93,23 @@ So partial coverage is expected and not a runtime failure.
 
 ## Typical update flow for a new league
 
-1. Fetch latest mappings (fast path):
-   - `npm run poedb:generate-links`
-2. (Optional) Retry unresolved subset:
-   - `npm run poedb:generate-links:report`
-3. Validate the shipped map:
-   - `npm run poedb:validate-links`
-4. If validation reports bad mappings, prune and refill them:
-   - `npm run poedb:prune-invalid-links`
-   - `npm run poedb:generate-links`
-5. Commit updated `src/data/poedb-item-links.generated.json`.
-6. Release the app with the updated `src/data/poedb-item-links.generated.json`.
-7. In app, pull history from the PoEDB tab when you want to refresh OHLC data.
+1. Run the repo-side league start workflow:
+   - `npm run poedb:league-start`
+2. If you want a full league-wide rebuild instead of only filling missing/new items:
+   - `npm run poedb:league-start:all`
+3. Review:
+   - `scripts/poedb-links-report.json`
+   - `scripts/poedb-links-validation-report.json`
+4. Commit updated `src/data/poedb-item-links.generated.json`.
+5. Release the app with the updated bundled map.
+6. In app, users can use `Clear stored snapshots` and then pull fresh PoEDB history for the new league.
+
+## What the league start script does
+
+- generate missing or all PoEDB links from the latest poe.ninja item universe
+- validate the shipped map against current items and PoEDB pages
+- if invalid mappings are found, prune them and refill missing entries automatically
+- leave fresh generation and validation reports for manual review before release
 
 
 
