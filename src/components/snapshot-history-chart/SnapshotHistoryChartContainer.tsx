@@ -7,12 +7,18 @@ import SnapshotHistoryChart from './SnapshotHistoryChart';
 
 type SnapshotHistoryChartContainerProps = {
   showIndividualTabs?: boolean;
+  showSeriesLegend?: boolean;
+  twoColumnLegend?: boolean;
   chartHeight?: number;
+  playerDataOverride?: any;
 };
 
 const SnapshotHistoryChartContainer = ({
   showIndividualTabs,
+  showSeriesLegend,
+  twoColumnLegend,
   chartHeight,
+  playerDataOverride,
 }: SnapshotHistoryChartContainerProps) => {
   const { accountStore, signalrStore } = useStores();
   const ref = useRef(null);
@@ -28,8 +34,13 @@ const SnapshotHistoryChartContainer = ({
         width={size.width}
         height={size.height}
         groupData={showIndividualTabs ? undefined : activeGroup?.chartData}
-        playerData={showIndividualTabs ? activeProfile?.tabChartData : activeProfile?.chartData}
+        playerData={
+          playerDataOverride ||
+          (showIndividualTabs ? activeProfile?.tabChartData : activeProfile?.chartData)
+        }
         showIndividualTabs={showIndividualTabs}
+        showSeriesLegend={showSeriesLegend}
+        twoColumnLegend={twoColumnLegend}
       />
     </div>
   );

@@ -13,7 +13,7 @@ import { ISparkLineDetails } from '../../interfaces/external-price.interface';
 import { IPricedItem } from '../../interfaces/priced-item.interface';
 import { poeDbService } from '../../services/poedb.service';
 import { ICompactTab } from '../../interfaces/stash.interface';
-import { getRarity, parseTabNames } from '../../utils/item.utils';
+import { formatItemGroupLabel, getRarity, parseTabNames } from '../../utils/item.utils';
 import { formatSparklineChartData, getRawPriceFromPricedItem } from '../../utils/price.utils';
 import { openCustomLink } from '../../utils/window.utils';
 import SparklineChart from '../sparkline-chart/SparklineChart';
@@ -140,6 +140,21 @@ export function itemTabs(options: { accessor: string; header: string }): Column<
     Cell: (data: any) => {
       const value = data.row.values[accessor];
       return <ItemTabsCell tabs={value ? value : ''} />;
+    },
+  };
+}
+
+export function itemGroup(options: { accessor: string; header: string }): Column<object> {
+  const { header, accessor } = options;
+
+  return {
+    Header: header,
+    accessor,
+    minWidth: 110,
+    // eslint-disable-next-line react/display-name
+    Cell: (data: any) => {
+      const value = data.row.values[accessor];
+      return <ItemGroupCell group={value} />;
     },
   };
 }
@@ -479,6 +494,20 @@ type ItemTabsCellProps = {
 const ItemTabsCell = ({ tabs }: ItemTabsCellProps) => {
   const classes = useStyles();
   const value = tabs ? parseTabNames(tabs) : '';
+  return (
+    <Tooltip title={value} placement="bottom">
+      <span className={classes.ellipsis}>{value}</span>
+    </Tooltip>
+  );
+};
+
+type ItemGroupCellProps = {
+  group?: string;
+};
+
+const ItemGroupCell = ({ group }: ItemGroupCellProps) => {
+  const classes = useStyles();
+  const value = formatItemGroupLabel(group);
   return (
     <Tooltip title={value} placement="bottom">
       <span className={classes.ellipsis}>{value}</span>

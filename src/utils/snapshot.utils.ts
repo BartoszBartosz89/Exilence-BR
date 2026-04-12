@@ -180,6 +180,7 @@ export const filterItems = (items: IPricedItem[]) => {
     items.filter(
       (i) =>
         (i.calculated > 0 && i.name.toLowerCase().includes(filterText)) ||
+        (i.group && i.group.toLowerCase().includes(filterText)) ||
         (i.tab &&
           i.tab
             .map((t) => t.name)
@@ -223,6 +224,7 @@ export const filterSnapshotItems = (snapshots: IApiSnapshot[]) => {
         sts.pricedItems.filter(
           (i) =>
             (i.calculated > 0 && i.name.toLowerCase().includes(filterText)) ||
+            (i.group && i.group.toLowerCase().includes(filterText)) ||
             (i.tab &&
               i.tab
                 .map((t) => t.name)

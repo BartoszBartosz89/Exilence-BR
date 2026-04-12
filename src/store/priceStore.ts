@@ -169,6 +169,49 @@ export class PriceStore {
     );
   }
 
+  getResolvedGroupForItem(
+    item: Pick<
+      IPricedItem,
+      | 'name'
+      | 'quality'
+      | 'links'
+      | 'level'
+      | 'corrupted'
+      | 'frameType'
+      | 'variant'
+      | 'elder'
+      | 'shaper'
+      | 'ilvl'
+      | 'tier'
+      | 'icon'
+      | 'group'
+    >
+  ) {
+    if (item.group) {
+      return item.group;
+    }
+
+    if (item.name === 'Chaos Orb') {
+      return 'Currency';
+    }
+
+    const matched = this.getMatchedActivePriceForItem(item);
+    if (matched?.group) {
+      return matched.group;
+    }
+
+    switch (item.frameType) {
+      case 4:
+        return 'SkillGem';
+      case 5:
+        return 'Currency';
+      case 6:
+        return 'DivinationCard';
+      default:
+        return 'Unknown';
+    }
+  }
+
   @computed get customPricesTableData() {
     const selectedLeagueId = this.rootStore.uiStateStore.selectedPriceTableLeagueId;
     const activeLeagueId = this.rootStore.accountStore.getSelectedAccount.activePriceLeague?.id;

@@ -25,7 +25,7 @@ import { ISparklineDataPoint } from '../../interfaces/sparkline-data-point.inter
 import { IStashTabSnapshot } from '../../interfaces/stash-tab-snapshot.interface';
 import { IStashTab } from '../../interfaces/stash.interface';
 import { pricingService } from '../../services/pricing.service';
-import { mapItemsToPricedItems, mergeItemStacks } from '../../utils/item.utils';
+import { formatItemGroupLabel, mapItemsToPricedItems, mergeItemStacks } from '../../utils/item.utils';
 import {
   excludeInvalidItems,
   excludeLegacyMaps,
@@ -307,6 +307,57 @@ export class Profile {
   }
 
   @computed
+  get groupSummaryRows() {
+    rootStore.customPriceStore.revision;
+    rootStore.settingStore.pricingModel;
+    rootStore.settingStore.poedbPricingDate;
+    rootStore.poeDbPriceStore.selectedDate;
+    rootStore.poeDbPriceStore.urlHistories.length;
+    const items = this.items;
+
+    if (items.length === 0) {
+      return [];
+    }
+
+    const groupedRows = new Map<
+      string,
+      {
+        group: string;
+        label: string;
+        itemCount: number;
+        quantity: number;
+        total: number;
+      }
+    >();
+
+    items.forEach((item) => {
+      const group = this.getItemGroup(item);
+      const label = formatItemGroupLabel(group);
+      const existing = groupedRows.get(group) || {
+        group,
+        label,
+        itemCount: 0,
+        quantity: 0,
+        total: 0,
+      };
+
+      existing.itemCount += 1;
+      existing.quantity += item.stackSize || 0;
+      existing.total += item.total || 0;
+      groupedRows.set(group, existing);
+    });
+
+    const grandTotal = Array.from(groupedRows.values()).reduce((sum, row) => sum + row.total, 0);
+
+    return Array.from(groupedRows.values())
+      .map((row) => ({
+        ...row,
+        share: grandTotal > 0 ? (row.total / grandTotal) * 100 : 0,
+      }))
+      .sort((a, b) => b.total - a.total);
+  }
+
+  @computed
   get itemCount() {
     if (this.snapshots.length === 0) {
       return 0;
@@ -324,6 +375,7 @@ export class Profile {
     if (customPrice && customPrice > 0) {
       return {
         ...item,
+        group: rootStore.priceStore.getResolvedGroupForItem(item),
         calculated: customPrice,
         total: item.stackSize * customPrice,
         customPrice,
@@ -333,7 +385,10 @@ export class Profile {
     const matchedLivePrice = rootStore.priceStore.getMatchedActivePriceForItem(item);
 
     if (!matchedLivePrice) {
-      return item;
+      return {
+        ...item,
+        group: rootStore.priceStore.getResolvedGroupForItem(item),
+      };
     }
 
     const effectivePrice = rootStore.priceStore.resolveEffectivePriceValue(matchedLivePrice);
@@ -343,10 +398,18 @@ export class Profile {
 
     return {
       ...item,
+      group: rootStore.priceStore.getResolvedGroupForItem({
+        ...item,
+        group: matchedLivePrice.group || item.group,
+      }),
       calculated: effectivePrice,
       total: item.stackSize * effectivePrice,
       customPrice: matchedLivePrice.customPrice,
     };
+  }
+
+  private getItemGroup(item: IPricedItem) {
+    return rootStore.priceStore.getResolvedGroupForItem(item);
   }
 
   private getSnapshotValueWithCustomPrices(snapshot: IApiSnapshot) {

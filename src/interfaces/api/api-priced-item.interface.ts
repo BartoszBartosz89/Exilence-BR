@@ -2,6 +2,7 @@ export interface IApiPricedItem {
   uuid: string;
   itemId: string;
   name: string;
+  group?: string;
   typeLine: string;
   frameType: number;
   total: number;

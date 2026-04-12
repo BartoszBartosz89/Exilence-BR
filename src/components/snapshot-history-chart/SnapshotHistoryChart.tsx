@@ -15,6 +15,8 @@ type SnapshotHistoryChartProps = {
   playerData?: IConnectionChartSeries[];
   groupData?: IGroupChartSeries[];
   showIndividualTabs?: boolean;
+  showSeriesLegend?: boolean;
+  twoColumnLegend?: boolean;
 };
 
 type ChartSeries = {
@@ -27,6 +29,8 @@ const SnapshotHistoryChart = ({
   playerData,
   groupData,
   showIndividualTabs,
+  showSeriesLegend,
+  twoColumnLegend,
 }: SnapshotHistoryChartProps) => {
   const theme = useTheme();
   const classes = useStyles();
@@ -34,14 +38,14 @@ const SnapshotHistoryChart = ({
   let seriesData: ChartSeries[] = playerData
     ? playerData.map((pd) => {
         return {
-          type: showIndividualTabs ? 'spline' : 'area',
+          type: showSeriesLegend || showIndividualTabs ? 'spline' : 'area',
           name: pd.seriesName,
           data: pd.series,
         };
       })
     : [
         {
-          type: showIndividualTabs ? 'spline' : 'area',
+          type: showSeriesLegend || showIndividualTabs ? 'spline' : 'area',
           name: 'No data',
           data: [],
         },
@@ -53,7 +57,7 @@ const SnapshotHistoryChart = ({
     groupData.map((gd) => {
       gd.connections.map((player) => {
         const playerData = {
-          type: showIndividualTabs ? 'spline' : 'area',
+          type: showSeriesLegend || showIndividualTabs ? 'spline' : 'area',
           name: player.seriesName,
           data: player.series,
         };
@@ -82,7 +86,12 @@ const SnapshotHistoryChart = ({
       type: 'datetime',
     },
     legend: {
-      enabled: showIndividualTabs ? true : false,
+      enabled: showSeriesLegend || showIndividualTabs ? true : false,
+      layout: showSeriesLegend ? 'horizontal' : 'horizontal',
+      align: 'center',
+      verticalAlign: 'bottom',
+      itemWidth: twoColumnLegend ? 220 : undefined,
+      alignColumns: true,
     },
     plotOptions: {
       area: {
@@ -93,7 +102,7 @@ const SnapshotHistoryChart = ({
             x2: 0,
             y2: 1,
           },
-          stops: showIndividualTabs
+          stops: showSeriesLegend || showIndividualTabs
             ? []
             : [
                 [0, HC.color(theme.palette.primary.main).setOpacity(0.25).get('rgba')],
