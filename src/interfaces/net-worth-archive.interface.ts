@@ -9,6 +9,7 @@ export interface INetWorthArchive {
   name: string;
   createdAt: string;
   currency: string;
+  mapCount?: number;
   sources: INetWorthArchiveSource[];
   items?: INetWorthArchiveItem[];
   sourceDate?: string;

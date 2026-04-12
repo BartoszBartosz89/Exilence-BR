@@ -333,6 +333,7 @@ const NetWorthArchives = () => {
                         <Typography variant="body2" color="text.secondary">
                           {getArchiveSourceCount(activeArchive)} sources • {activeArchiveItemCount}{' '}
                           merged items
+                          {activeArchive.mapCount ? ` • ${activeArchive.mapCount} maps` : ''}
                           {latestSource?.pricingModel
                             ? ` • Latest pricing: ${latestSource.pricingModel}`
                             : ''}
@@ -349,6 +350,20 @@ const NetWorthArchives = () => {
                         </Typography>
                       </Box>
                       <Stack direction="row" spacing={1}>
+                        <TextField
+                          type="number"
+                          size="small"
+                          label="Maps"
+                          value={activeArchive.mapCount || 1}
+                          onChange={(event) =>
+                            netWorthArchiveStore!.setArchiveMapCount(
+                              activeArchive.uuid,
+                              Number(event.target.value || 1)
+                            )
+                          }
+                          inputProps={{ min: 1, step: 1 }}
+                          style={{ width: 120 }}
+                        />
                         <Button startIcon={<EditIcon />} onClick={handleRenameArchive}>
                           Rename
                         </Button>

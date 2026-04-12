@@ -38,6 +38,7 @@ import Login from './routes/login/Login';
 import NetWorthArchives from './routes/net-worth-archives/NetWorthArchives';
 import NetWorth from './routes/net-worth/NetWorth';
 import Settings from './routes/settings/Settings';
+import StrategyReviewer from './routes/strategy-reviewer/StrategyReviewer';
 import { electronService } from './services/electron.service';
 import { RootStore } from './store/rootStore';
 
@@ -108,6 +109,7 @@ const App = ({ error }: Props) => {
                     <ToolbarContainer />
                     <Route path="/net-worth" component={NetWorth} />
                     <Route path="/net-worth-archives" component={NetWorthArchives} />
+                    <Route path="/strategy-reviewer" component={StrategyReviewer} />
                     <Route path="/settings" component={Settings} />
                     <Route path="/bulk-sell" component={BulkSell} />
                     <Route
@@ -145,6 +147,7 @@ const renderApp = () => {
     hydrate('account', rootStore.accountStore),
     hydrate('customPrice', rootStore.customPriceStore),
     hydrate('netWorthArchive', rootStore.netWorthArchiveStore),
+    hydrate('strategyReviewer', rootStore.strategyReviewerStore),
     hydrate('uiState', rootStore.uiStateStore),
     hydrate('league', rootStore.leagueStore),
     hydrate('setting', rootStore.settingStore),

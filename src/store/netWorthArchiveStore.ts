@@ -88,6 +88,7 @@ export class NetWorthArchiveStore {
       name: buildDefaultArchiveName(sourceLabel),
       createdAt,
       currency: settingStore.currency,
+      mapCount: 1,
       sources: [
         buildArchiveSourceFromPricedItems(items, sourceLabel, {
           createdAt,
@@ -120,6 +121,7 @@ export class NetWorthArchiveStore {
           : buildDefaultArchiveName(`Imported ${files.length} files`),
       createdAt,
       currency: this.rootStore.settingStore.currency,
+      mapCount: 1,
       sources: parsedFiles.map((entry) =>
         buildArchiveSourceFromParsedCsv(entry.file.name, entry.parsed, {
           createdAt,
@@ -202,6 +204,16 @@ export class NetWorthArchiveStore {
     if (archive && nextName.length > 0) {
       archive.name = nextName;
     }
+  }
+
+  @action
+  setArchiveMapCount(id: string, mapCount: number) {
+    const archive = this.archives.find((entry) => entry.uuid === id);
+    if (!archive) {
+      return;
+    }
+
+    archive.mapCount = Number.isFinite(mapCount) ? Math.max(1, Math.floor(mapCount)) : 1;
   }
 
   getMergedArchiveItems(archive: INetWorthArchive) {
