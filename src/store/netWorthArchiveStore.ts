@@ -1,6 +1,7 @@
 import { action, computed, makeObservable, observable } from 'mobx';
 import { persist } from 'mobx-persist';
 import { v4 as uuidv4 } from 'uuid';
+import { formatItemGroupLabel } from '../utils/item.utils';
 import { INetWorthArchive } from '../interfaces/net-worth-archive.interface';
 import { INetWorthArchiveItem } from '../interfaces/net-worth-archive-item.interface';
 import {
@@ -65,6 +66,61 @@ export class NetWorthArchiveStore {
     const liveTotal = this.activeArchiveItems.reduce((sum, item) => sum + (item.liveTotal || 0), 0);
 
     return { snapshotTotal, liveTotal };
+  }
+
+  @computed
+  get activeArchiveGroupSummaryRows() {
+    const archive = this.activeArchive;
+    if (!archive) {
+      return [];
+    }
+
+    const items = this.activeArchiveItems;
+    if (items.length === 0) {
+      return [];
+    }
+
+    const groupedRows = new Map<
+      string,
+      {
+        group: string;
+        label: string;
+        snapshotTotal: number;
+        liveTotal: number;
+      }
+    >();
+
+    items.forEach((item) => {
+      const group = this.rootStore.priceStore.getResolvedGroupForItem(item);
+      const label = formatItemGroupLabel(group);
+      const existing = groupedRows.get(group) || {
+        group,
+        label,
+        snapshotTotal: 0,
+        liveTotal: 0,
+      };
+
+      existing.snapshotTotal += item.snapshotTotal || 0;
+      existing.liveTotal += item.liveTotal || 0;
+      groupedRows.set(group, existing);
+    });
+
+    const snapshotGrandTotal = Array.from(groupedRows.values()).reduce(
+      (sum, row) => sum + row.snapshotTotal,
+      0
+    );
+    const liveGrandTotal = Array.from(groupedRows.values()).reduce(
+      (sum, row) => sum + row.liveTotal,
+      0
+    );
+
+    return Array.from(groupedRows.values())
+      .map((row) => ({
+        ...row,
+        snapshotShare: snapshotGrandTotal > 0 ? (row.snapshotTotal / snapshotGrandTotal) * 100 : 0,
+        liveShare: liveGrandTotal > 0 ? (row.liveTotal / liveGrandTotal) * 100 : 0,
+      }))
+      .sort((a, b) => b.snapshotTotal - a.snapshotTotal);
   }
 
   @action

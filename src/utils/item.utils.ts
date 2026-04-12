@@ -48,6 +48,41 @@ export function parseTabNames(tabs: ICompactTab[]) {
   return tabs.map((t) => t.name).join(', ');
 }
 
+export function formatItemGroupLabel(group?: string) {
+  switch (group) {
+    case 'DivinationCard':
+      return 'Divination Cards';
+    case 'SkillGem':
+      return 'Skill Gems';
+    case 'UniqueMap':
+      return 'Unique Maps';
+    case 'UniqueJewel':
+      return 'Unique Jewels';
+    case 'UniqueFlask':
+      return 'Unique Flasks';
+    case 'UniqueWeapon':
+      return 'Unique Weapons';
+    case 'UniqueArmour':
+      return 'Unique Armour';
+    case 'UniqueRelic':
+      return 'Unique Relics';
+    case 'UniqueAccessory':
+      return 'Unique Accessories';
+    case 'DeliriumOrb':
+      return 'Delirium Orbs';
+    case 'BlightedMap':
+      return 'Blighted Maps';
+    case 'BlightRavagedMap':
+      return 'Blight-ravaged Maps';
+    case 'AllflameEmber':
+      return 'Allflame Embers';
+    case 'KalguuranRune':
+      return 'Kalguuran Runes';
+    default:
+      return group || 'Unknown';
+  }
+}
+
 export function mapItemsToPricedItems(items: IItem[], tab?: IStashTab) {
   return items.map((item: IItem) => {
     const mapTier =

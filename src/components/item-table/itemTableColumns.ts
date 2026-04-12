@@ -1,6 +1,7 @@
 import { Column } from 'react-table';
 import {
   itemCorrupted,
+  itemGroup,
   itemIcon,
   itemIlvlTier,
   itemLinks,
@@ -27,6 +28,10 @@ const itemTableColumns: Column<object>[] = [
   itemTabs({
     accessor: 'tab',
     header: 'Tabs',
+  }),
+  itemGroup({
+    accessor: 'group',
+    header: 'Group',
   }),
   itemCorrupted({
     accessor: 'corrupted',
