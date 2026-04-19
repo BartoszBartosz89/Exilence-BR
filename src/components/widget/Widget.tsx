@@ -8,7 +8,7 @@ import useStyles from './Widget.styles';
 type WidgetProps = {
   backgroundColor?: string;
   textColor?: string;
-  height?: number;
+  height?: number | string;
   compact?: boolean;
   center?: boolean;
   loading?: boolean;
@@ -25,18 +25,19 @@ const Widget = ({
   center,
 }: WidgetProps) => {
   const classes = useStyles();
+  const widgetHeight = typeof height === 'undefined' ? cardHeight : height;
 
   return (
     <>
       {loading ? (
-        <Skeleton variant="rectangular" height={height} />
+        <Skeleton variant="rectangular" height={widgetHeight} />
       ) : (
         <Paper
           className={clsx(classes.paper, {
             [classes.noPadding]: compact,
             [classes.centered]: center,
           })}
-          style={{ background: backgroundColor, color: textColor, height: height }}
+          style={{ background: backgroundColor, color: textColor, height: widgetHeight }}
         >
           {children}
         </Paper>

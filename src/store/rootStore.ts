@@ -13,6 +13,7 @@ import { RateLimitStore } from './rateLimitStore';
 import { RouteStore } from './routeStore';
 import { SettingStore } from './settingStore';
 import { SignalrStore } from './signalrStore';
+import { StrategyReviewerStore } from './strategyReviewerStore';
 import { UiStateStore } from './uiStateStore';
 import { UpdateStore } from './updateStore';
 
@@ -28,6 +29,7 @@ export class RootStore {
   leagueStore: LeagueStore;
   notificationStore: NotificationStore;
   signalrStore: SignalrStore;
+  strategyReviewerStore: StrategyReviewerStore;
   priceStore: PriceStore;
   overlayStore: OverlayStore;
   logStore: LogStore;
@@ -47,6 +49,7 @@ export class RootStore {
     this.leagueStore = new LeagueStore(this);
     this.notificationStore = new NotificationStore(this);
     this.signalrStore = new SignalrStore(this);
+    this.strategyReviewerStore = new StrategyReviewerStore(this);
     this.priceStore = new PriceStore(this);
     this.overlayStore = new OverlayStore(this);
     this.logStore = new LogStore(this);

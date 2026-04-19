@@ -200,6 +200,45 @@ export class PoeDbPriceStore {
     }
   }
 
+  getClosestMetricPriceForExternalPrice(
+    price: IExternalPrice,
+    model: PricingModel,
+    selectedDate?: string
+  ): number | undefined {
+    const url =
+      this.getMappedUrlForExternalPrice(price) || poeDbService.getHardcodedUrlForItem(price);
+    if (!url) {
+      return undefined;
+    }
+
+    const history = this.historyByUrlMap.get(url)?.history;
+    if (!history || history.length === 0) {
+      return undefined;
+    }
+
+    const targetDate = selectedDate || this.availableDates[this.availableDates.length - 1];
+    if (!targetDate) {
+      return this.getMetricValueForPoint(history[history.length - 1], model);
+    }
+
+    const exact = history.find((entry) => entry.date === targetDate);
+    if (exact) {
+      return this.getMetricValueForPoint(exact, model);
+    }
+
+    const previous = [...history].reverse().find((entry) => entry.date < targetDate);
+    if (previous) {
+      return this.getMetricValueForPoint(previous, model);
+    }
+
+    const next = history.find((entry) => entry.date > targetDate);
+    if (next) {
+      return this.getMetricValueForPoint(next, model);
+    }
+
+    return undefined;
+  }
+
   getSparklineDetailsForExternalPrice(
     price: IExternalPrice,
     model: PricingModel,
