@@ -18,6 +18,12 @@ import {
   ListItemButton,
   ListItemText,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
 } from '@mui/material';
@@ -36,12 +42,14 @@ import useStyles from './NetWorthArchives.styles';
 type FileActionMode = 'create' | 'add';
 
 const NetWorthArchives = () => {
-  const { netWorthArchiveStore, settingStore, accountStore, signalrStore } = useStores();
+  const { netWorthArchiveStore, settingStore, accountStore, signalrStore, priceStore } =
+    useStores();
   const classes = useStyles();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const activeArchive = netWorthArchiveStore!.activeArchive;
   const activeItems = netWorthArchiveStore!.activeArchiveItems;
   const totals = netWorthArchiveStore!.activeArchiveTotals;
+  const groupSummaryRows = netWorthArchiveStore!.activeArchiveGroupSummaryRows;
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState('');
   const [deleteArchiveId, setDeleteArchiveId] = useState<string | undefined>(undefined);
@@ -139,6 +147,15 @@ const NetWorthArchives = () => {
     netWorthArchiveStore!.getMergedArchiveItems(archive).length;
   const getArchiveSourceCount = (archive: any) => archive.sources?.length || 0;
   const latestSource = activeArchive?.sources?.[activeArchive.sources?.length - 1];
+  const convertToSelectedCurrency = (value: number) => {
+    if (settingStore.currency === 'exalt' && priceStore.exaltedPrice) {
+      return value / priceStore.exaltedPrice;
+    }
+    if (settingStore.currency === 'divine' && priceStore.divinePrice) {
+      return value / priceStore.divinePrice;
+    }
+    return value;
+  };
 
   return (
     <>
@@ -409,6 +426,47 @@ const NetWorthArchives = () => {
                 </Grid>
 
                 <ArchiveItemTable items={activeItems as any} />
+                <Box mt={2}>
+                  <Widget backgroundColor={secondary.main}>
+                    <Box mb={2}>
+                      <Typography variant="overline">Item group summary</Typography>
+                    </Box>
+                    <TableContainer>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Group</TableCell>
+                            <TableCell align="right">
+                              Snapshot total ({settingStore.activeCurrency.short})
+                            </TableCell>
+                            <TableCell align="right">Snapshot %</TableCell>
+                            <TableCell align="right">
+                              Current app total ({settingStore.activeCurrency.short})
+                            </TableCell>
+                            <TableCell align="right">Current %</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {groupSummaryRows.map((row) => (
+                            <TableRow key={row.group}>
+                              <TableCell>{row.label}</TableCell>
+                              <TableCell align="right">
+                                {formatNumberForDisplay(
+                                  convertToSelectedCurrency(row.snapshotTotal)
+                                )}
+                              </TableCell>
+                              <TableCell align="right">{row.snapshotShare.toFixed(2)}%</TableCell>
+                              <TableCell align="right">
+                                {formatNumberForDisplay(convertToSelectedCurrency(row.liveTotal))}
+                              </TableCell>
+                              <TableCell align="right">{row.liveShare.toFixed(2)}%</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Widget>
+                </Box>
               </>
             )}
           </Box>
@@ -416,6 +474,13 @@ const NetWorthArchives = () => {
       </Box>
     </>
   );
+};
+
+const formatNumberForDisplay = (value: number) => {
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 };
 
 export default observer(NetWorthArchives);

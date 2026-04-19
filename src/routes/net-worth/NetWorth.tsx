@@ -1,10 +1,24 @@
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import UpdateIcon from '@mui/icons-material/Update';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import StackedLineChartIcon from '@mui/icons-material/StackedLineChart';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import UpdateIcon from '@mui/icons-material/Update';
-import { Box, Grid, Skeleton, Tooltip, Typography, useTheme } from '@mui/material';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import {
+  Box,
+  Grid,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tooltip,
+  Typography,
+  useTheme,
+} from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -108,6 +122,15 @@ const NetWorth = () => {
   const displayedIncome = activeGroup
     ? getExaltedValue(activeGroup.income)
     : getExaltedValue(income());
+  const convertToSelectedCurrency = (value: number) => {
+    if (settingStore.currency === 'exalt' && priceStore.exaltedPrice) {
+      return value / priceStore.exaltedPrice;
+    }
+    if (settingStore.currency === 'divine' && priceStore.divinePrice) {
+      return value / priceStore.divinePrice;
+    }
+    return value;
+  };
 
   return (
     <FeatureWrapper>
@@ -189,7 +212,7 @@ const NetWorth = () => {
         </Grid>
         <Grid item xs={12}>
           <Grid container spacing={2}>
-            <Grid item xs={7}>
+            <Grid item xs={12} md={6}>
               {/* todo: this block should be refactored to its own component */}
               {loading() ? (
                 <Skeleton variant="rectangular" height={40} />
@@ -229,7 +252,7 @@ const NetWorth = () => {
                 </Accordion>
               )}
             </Grid>
-            <Grid item xs={5}>
+            <Grid item xs={12} md={6}>
               {loading() ? (
                 <Skeleton variant="rectangular" height={40} />
               ) : (
@@ -258,10 +281,7 @@ const NetWorth = () => {
                   >
                     <Grid container>
                       <Grid item xs={12}>
-                        <SnapshotHistoryChartContainer
-                          chartHeight={tabChartHeight}
-                          showIndividualTabs
-                        />
+                        <SnapshotHistoryChartContainer chartHeight={tabChartHeight} showIndividualTabs />
                       </Grid>
                     </Grid>
                   </AccordionDetails>
@@ -339,6 +359,57 @@ const NetWorth = () => {
               >
                 {uiStateStore!.showItemTableFilter && <ItemTableFilterSection />}
                 <ItemTableContainer searchFilterText={uiStateStore!.itemTableFilterText} />
+                <Box mt={2}>
+                  <Accordion
+                    expanded={uiStateStore!.groupChartExpanded}
+                    onChange={() =>
+                      uiStateStore!.setGroupChartExpanded(!uiStateStore!.groupChartExpanded)
+                    }
+                  >
+                    <AccordionSummary
+                      expandIcon={<ExpandMoreIcon />}
+                      aria-controls="group-summary-content"
+                      id="group-summary-header"
+                    >
+                      <Box display="flex" justifyContent="center" alignItems="center">
+                        <LocalOfferIcon fontSize="small" />
+                        <Box ml={1}>
+                          <Typography variant="overline">Item group summary</Typography>
+                        </Box>
+                      </Box>
+                    </AccordionSummary>
+                    <AccordionDetails
+                      style={{
+                        background: theme.palette.background.default,
+                      }}
+                    >
+                      <TableContainer>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Group</TableCell>
+                              <TableCell align="right">
+                                Total value ({settingStore.activeCurrency.short})
+                              </TableCell>
+                              <TableCell align="right">% of total</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {activeProfile?.groupSummaryRows.map((row) => (
+                              <TableRow key={row.group}>
+                                <TableCell>{row.label}</TableCell>
+                                <TableCell align="right">
+                                  {formatNumberForDisplay(convertToSelectedCurrency(row.total))}
+                                </TableCell>
+                                <TableCell align="right">{row.share.toFixed(2)}%</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </AccordionDetails>
+                  </Accordion>
+                </Box>
               </AccordionDetails>
             </Accordion>
           )}
@@ -346,6 +417,13 @@ const NetWorth = () => {
       </Grid>
     </FeatureWrapper>
   );
+};
+
+const formatNumberForDisplay = (value: number) => {
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 };
 
 export default observer(NetWorth);

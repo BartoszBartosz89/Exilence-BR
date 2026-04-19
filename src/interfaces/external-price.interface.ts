@@ -1,5 +1,6 @@
 export interface IExternalPrice {
   name: string;
+  group?: string;
   calculated?: number;
   max?: number;
   mean?: number;

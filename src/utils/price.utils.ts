@@ -14,6 +14,7 @@ export function getExternalPriceFromWatchItem(
 ): IExternalPrice {
   return {
     name: item.name,
+    group: item.category,
     icon: item.icon,
     max: item.max ?? 0,
     mean: item.mean ?? 0,
@@ -46,6 +47,7 @@ export function getExternalPriceFromNinjaItem(
   )}/${getNinjaTypeUrl(type)}/${item.detailsId}`;
   return {
     name: item.name,
+    group: type,
     icon: item.icon,
     calculated: item.chaosValue ?? 0,
     links: item.links ?? 0,
@@ -92,6 +94,7 @@ export function getExternalPriceFromNinjaCurrencyItem(
 
   return {
     name: item.currencyTypeName,
+    group: type,
     calculated: calculated,
     icon: details !== undefined ? details.icon : undefined,
     count: item.receive ? item.receive.count : 0,
@@ -116,6 +119,7 @@ export const filterPrices = (prices: IExternalPrice[]) => {
 export function mapPriceToItem(item: IPricedItem, price: IExternalPrice, customPrice?: number) {
   if (price !== undefined) {
     item.calculated = customPrice ? customPrice : price.calculated || 0;
+    item.group = price.group || item.group;
     item.max = price.max || 0;
     item.mean = price.mean || 0;
     item.mode = price.mode || 0;
@@ -165,6 +169,7 @@ export function findPriceForItem(array: IExternalPrice[], priceToFind: IPricedIt
 export function getRawPriceFromPricedItem(item: IPricedItem): IExternalPrice {
   return {
     calculated: item.calculated,
+    group: item.group,
     name: item.name,
     icon: item.icon,
     quality: item.quality,

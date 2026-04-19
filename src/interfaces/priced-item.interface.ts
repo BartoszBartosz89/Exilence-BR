@@ -3,6 +3,7 @@ import { ICompactTab } from './stash.interface';
 export interface IPricedItem {
   uuid: string;
   name: string;
+  group?: string;
   itemId: string;
   typeLine: string;
   frameType: number;

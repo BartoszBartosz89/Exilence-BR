@@ -81,6 +81,7 @@ export class UiStateStore {
   @observable changingProfile: boolean = false;
   @persist @observable netWorthChartExpanded: boolean = false;
   @persist @observable tabChartExpanded: boolean = false;
+  @persist @observable groupChartExpanded: boolean = false;
   @persist @observable netWorthItemsExpanded: boolean = true;
   @observable timeSinceLastSnapshotLabel: string | undefined = undefined;
   @observable timeSincePricesFetchedLabel: string | undefined = undefined;
@@ -213,6 +214,11 @@ export class UiStateStore {
   @action
   setTabChartExpanded(expanded: boolean) {
     this.tabChartExpanded = expanded;
+  }
+
+  @action
+  setGroupChartExpanded(expanded: boolean) {
+    this.groupChartExpanded = expanded;
   }
 
   @action
