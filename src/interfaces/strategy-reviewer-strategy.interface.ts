@@ -6,6 +6,7 @@ export interface IStrategyReviewerStrategy {
   name: string;
   archiveId?: string;
   mapCountOverride?: number;
+  clearTimeMinutes?: number;
   collapsed?: boolean;
   costItems: IStrategyReviewerCostItem[];
   cachedPoints: IStrategyReviewerPoint[];

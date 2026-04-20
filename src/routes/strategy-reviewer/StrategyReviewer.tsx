@@ -15,6 +15,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   Grid,
   IconButton,
   List,
@@ -22,6 +23,7 @@ import {
   ListItemText,
   MenuItem,
   Stack,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -69,7 +71,6 @@ const StrategyReviewer = () => {
     strategyReviewerStore,
     netWorthArchiveStore,
     settingStore,
-    priceStore,
     poeDbPriceStore,
   } = useStores();
   const classes = useStyles();
@@ -84,10 +85,18 @@ const StrategyReviewer = () => {
     'strategyReviewer:sidebarCollapsed',
     false
   );
-  const [chartCollapsed, setChartCollapsed] = useLocalStorage(
-    'strategyReviewer:chartCollapsed',
+  const [profitPerMapChartCollapsed, setProfitPerMapChartCollapsed] = useLocalStorage(
+    'strategyReviewer:profitPerMapChartCollapsed',
     false
   );
+  const [profitPerHourChartCollapsed, setProfitPerHourChartCollapsed] = useLocalStorage(
+    'strategyReviewer:profitPerHourChartCollapsed',
+    false
+  );
+  const [displayCurrency, setDisplayCurrency] = useLocalStorage(
+    'strategyReviewer:displayCurrency',
+    'chaos'
+  ) as ['chaos' | 'divine', (value: 'chaos' | 'divine') => void];
 
   useEffect(() => {
     visitor!.pageview('/strategy-reviewer', appName).send();
@@ -121,18 +130,34 @@ const StrategyReviewer = () => {
     void strategyReviewerStore.refreshAllStrategies();
   }, [refreshSignature]);
 
-  const chartSeries = strategyReviewerStore.chartSeries.map((series) => ({
-    ...series,
-    series: series.series.map((point) => [
-      point[0],
-      convertToSelectedCurrency(
-        point[1],
-        settingStore.currency,
-        priceStore.exaltedPrice,
-        priceStore.divinePrice
-      ),
-    ]),
-  }));
+  const currencyShort = displayCurrency === 'divine' ? 'div' : 'c';
+
+  const buildChartSeries = (valueSelector: (point: any) => number) =>
+    strategyReviewerStore.filteredStrategies
+      .filter((strategy) => strategy.filteredPoints.length > 0)
+      .map((strategy) => ({
+        seriesName: strategy.name,
+        series: strategy.filteredPoints.map((point) => [
+          new Date(point.date).getTime(),
+          +convertStrategyValue(valueSelector(point), displayCurrency, point.divinePrice).toFixed(2),
+        ]),
+      }));
+
+  const profitPerMapChartSeries = buildChartSeries((point) =>
+    typeof point.profitPerMap === 'number'
+      ? point.profitPerMap
+      : point.profitValue / Math.max(1, point.mapCount || 1)
+  );
+
+  const profitPerHourChartSeries = buildChartSeries((point) =>
+    typeof point.profitPerHour === 'number'
+      ? point.profitPerHour
+      : ((typeof point.profitPerMap === 'number'
+          ? point.profitPerMap
+          : point.profitValue / Math.max(1, point.mapCount || 1)) *
+          60) /
+        Math.max(0.1, point.clearTimeMinutes || 3)
+  );
 
   const filteredCostOptionsByStrategy = useMemo(() => {
     return (strategyReviewerStore.activeAnalysis?.strategies || []).reduce<
@@ -496,36 +521,53 @@ const StrategyReviewer = () => {
                   >
                     Add strategy
                   </Button>
+                  <FormControlLabel
+                    className={classes.currencyToggle}
+                    control={
+                      <Switch
+                        checked={displayCurrency === 'divine'}
+                        onChange={(event) =>
+                          setDisplayCurrency(event.target.checked ? 'divine' : 'chaos')
+                        }
+                      />
+                    }
+                    label={`Display ${displayCurrency === 'divine' ? 'divine' : 'chaos'}`}
+                  />
                 </Box>
 
                 <Widget
                   backgroundColor={theme.palette.secondary.main}
-                  height={chartCollapsed ? 72 : 560}
+                  height={profitPerMapChartCollapsed ? 72 : 560}
                 >
                   <Box
                     display="flex"
                     alignItems="center"
                     justifyContent="space-between"
-                    mb={chartCollapsed ? 0 : 2}
+                    mb={profitPerMapChartCollapsed ? 0 : 2}
                   >
                     <Box display="flex" alignItems="center">
                       <AutoGraphIcon fontSize="small" />
                       <Box ml={1}>
-                        <Typography variant="overline">Strategy profit chart</Typography>
+                        <Typography variant="overline">
+                          Strategy profit / map chart ({currencyShort})
+                        </Typography>
                       </Box>
                     </Box>
-                    <IconButton onClick={() => setChartCollapsed(!chartCollapsed)} size="large">
-                      {chartCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+                    <IconButton
+                      onClick={() => setProfitPerMapChartCollapsed(!profitPerMapChartCollapsed)}
+                      size="large"
+                    >
+                      {profitPerMapChartCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
                     </IconButton>
                   </Box>
-                  {!chartCollapsed && (
+                  {!profitPerMapChartCollapsed && (
                     <>
-                      {chartSeries.length > 0 ? (
+                      {profitPerMapChartSeries.length > 0 ? (
                         <Box className={classes.chartContainer}>
                           <SnapshotHistoryChart
                             width={0}
                             height={0}
-                            playerData={chartSeries}
+                            playerData={profitPerMapChartSeries}
                             showSeriesLegend
                             twoColumnLegend
                           />
@@ -533,6 +575,54 @@ const StrategyReviewer = () => {
                       ) : (
                         <Typography color="text.secondary">
                           Add a strategy and choose an archive to start plotting profit over time.
+                        </Typography>
+                      )}
+                    </>
+                  )}
+                </Widget>
+
+                <Widget
+                  backgroundColor={theme.palette.secondary.main}
+                  height={profitPerHourChartCollapsed ? 72 : 460}
+                >
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    mb={profitPerHourChartCollapsed ? 0 : 2}
+                  >
+                    <Box display="flex" alignItems="center">
+                      <AutoGraphIcon fontSize="small" />
+                      <Box ml={1}>
+                        <Typography variant="overline">
+                          Strategy profit / hour chart ({currencyShort})
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <IconButton
+                      onClick={() =>
+                        setProfitPerHourChartCollapsed(!profitPerHourChartCollapsed)
+                      }
+                      size="large"
+                    >
+                      {profitPerHourChartCollapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+                    </IconButton>
+                  </Box>
+                  {!profitPerHourChartCollapsed && (
+                    <>
+                      {profitPerHourChartSeries.length > 0 ? (
+                        <Box className={classes.chartContainer}>
+                          <SnapshotHistoryChart
+                            width={0}
+                            height={0}
+                            playerData={profitPerHourChartSeries}
+                            showSeriesLegend
+                            twoColumnLegend
+                          />
+                        </Box>
+                      ) : (
+                        <Typography color="text.secondary">
+                          Add clear time to strategies to compare profit per hour.
                         </Typography>
                       )}
                     </>
@@ -548,15 +638,19 @@ const StrategyReviewer = () => {
                             <TableCell>Strategy</TableCell>
                             <TableCell>Archive</TableCell>
                             <TableCell align="right">
-                              Gross / map ({settingStore.activeCurrency.short})
+                              Gross / map ({currencyShort})
                             </TableCell>
                             <TableCell align="right">
-                              Costs / map ({settingStore.activeCurrency.short})
+                              Costs / map ({currencyShort})
                             </TableCell>
                             <TableCell align="right">
-                              Profit / map ({settingStore.activeCurrency.short})
+                              Profit / map ({currencyShort})
+                            </TableCell>
+                            <TableCell align="right">
+                              Profit / h ({currencyShort})
                             </TableCell>
                             <TableCell align="right">Maps</TableCell>
+                            <TableCell align="right">Min / map</TableCell>
                             <TableCell align="right">Points</TableCell>
                           </TableRow>
                         </TableHead>
@@ -569,9 +663,8 @@ const StrategyReviewer = () => {
                                 {formatNumberForDisplay(
                                   convertToSelectedCurrency(
                                     row.grossPerMap,
-                                    settingStore.currency,
-                                    priceStore.exaltedPrice,
-                                    priceStore.divinePrice
+                                    displayCurrency,
+                                    row.averageDivinePrice
                                   )
                                 )}
                               </TableCell>
@@ -579,9 +672,8 @@ const StrategyReviewer = () => {
                                 {formatNumberForDisplay(
                                   convertToSelectedCurrency(
                                     row.costPerMap,
-                                    settingStore.currency,
-                                    priceStore.exaltedPrice,
-                                    priceStore.divinePrice
+                                    displayCurrency,
+                                    row.averageDivinePrice
                                   )
                                 )}
                               </TableCell>
@@ -589,13 +681,24 @@ const StrategyReviewer = () => {
                                 {formatNumberForDisplay(
                                   convertToSelectedCurrency(
                                     row.profitPerMap,
-                                    settingStore.currency,
-                                    priceStore.exaltedPrice,
-                                    priceStore.divinePrice
+                                    displayCurrency,
+                                    row.averageDivinePrice
+                                  )
+                                )}
+                              </TableCell>
+                              <TableCell align="right">
+                                {formatNumberForDisplay(
+                                  convertToSelectedCurrency(
+                                    row.profitPerHour,
+                                    displayCurrency,
+                                    row.averageDivinePrice
                                   )
                                 )}
                               </TableCell>
                               <TableCell align="right">{row.mapCount}</TableCell>
+                              <TableCell align="right">
+                                {formatNumberForDisplay(row.clearTimeMinutes)}
+                              </TableCell>
                               <TableCell align="right">{row.pointCount}</TableCell>
                             </TableRow>
                           ))}
@@ -695,12 +798,26 @@ const StrategyReviewer = () => {
                                 {formatNumberForDisplay(
                                   convertToSelectedCurrency(
                                     summaryRowsById[strategy.uuid]?.profitPerMap || 0,
-                                    settingStore.currency,
-                                    priceStore.exaltedPrice,
-                                    priceStore.divinePrice
+                                    displayCurrency,
+                                    summaryRowsById[strategy.uuid]?.averageDivinePrice
                                   )
                                 )}{' '}
-                                {settingStore.activeCurrency.short}
+                                {currencyShort}
+                              </Typography>
+                            </Box>
+                            <Box>
+                              <Typography variant="overline" color="text.secondary">
+                                Profit / h
+                              </Typography>
+                              <Typography variant="body1">
+                                {formatNumberForDisplay(
+                                  convertToSelectedCurrency(
+                                    summaryRowsById[strategy.uuid]?.profitPerHour || 0,
+                                    displayCurrency,
+                                    summaryRowsById[strategy.uuid]?.averageDivinePrice
+                                  )
+                                )}{' '}
+                                {currencyShort}
                               </Typography>
                             </Box>
                             <Box>
@@ -709,6 +826,16 @@ const StrategyReviewer = () => {
                               </Typography>
                               <Typography variant="body1">
                                 {strategyReviewerStore.getEffectiveMapCount(strategy)}
+                              </Typography>
+                            </Box>
+                            <Box>
+                              <Typography variant="overline" color="text.secondary">
+                                Min / map
+                              </Typography>
+                              <Typography variant="body1">
+                                {formatNumberForDisplay(
+                                  strategyReviewerStore.getEffectiveClearTimeMinutes(strategy)
+                                )}
                               </Typography>
                             </Box>
                             <Button
@@ -738,7 +865,7 @@ const StrategyReviewer = () => {
                                   }
                                 />
                               </Grid>
-                              <Grid item xs={12} md={3}>
+                              <Grid item xs={12} md={2}>
                                 <TextField
                                   select
                                   fullWidth
@@ -780,7 +907,23 @@ const StrategyReviewer = () => {
                                   }`}
                                 />
                               </Grid>
-                              <Grid item xs={12} md={3}>
+                              <Grid item xs={12} md={2}>
+                                <TextField
+                                  fullWidth
+                                  type="number"
+                                  label="Min / map"
+                                  value={strategy.clearTimeMinutes || 3}
+                                  onChange={(event) =>
+                                    strategyReviewerStore.setStrategyClearTimeMinutes(
+                                      strategy.uuid,
+                                      Number(event.target.value || 0)
+                                    )
+                                  }
+                                  inputProps={{ min: 0.1, step: 0.1 }}
+                                  helperText="Clear time"
+                                />
+                              </Grid>
+                              <Grid item xs={12} md={2}>
                                 <Button
                                   color="error"
                                   variant="contained"
@@ -875,8 +1018,8 @@ const StrategyReviewer = () => {
                               className={classes.helperText}
                             >
                               Up to 20 cost items per strategy. Costs are repriced for each
-                              historical date and deducted from archive value to produce the profit
-                              line.
+                              historical date, multiplied by the map count, and deducted from
+                              archive value to produce profit per map and profit per hour.
                             </Typography>
 
                             {strategy.costItems.map((cost) => (
@@ -925,18 +1068,20 @@ const StrategyReviewer = () => {
 
 const convertToSelectedCurrency = (
   value: number,
-  currency: 'chaos' | 'exalt' | 'divine',
-  exaltedPrice?: number,
+  currency: 'chaos' | 'divine',
   divinePrice?: number
 ) => {
-  if (currency === 'exalt' && exaltedPrice) {
-    return value / exaltedPrice;
-  }
   if (currency === 'divine' && divinePrice) {
     return value / divinePrice;
   }
   return value;
 };
+
+const convertStrategyValue = (
+  value: number,
+  currency: 'chaos' | 'divine',
+  divinePrice?: number
+) => convertToSelectedCurrency(value, currency, divinePrice);
 
 const formatNumberForDisplay = (value: number) => {
   return value.toLocaleString(undefined, {

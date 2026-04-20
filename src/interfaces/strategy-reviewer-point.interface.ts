@@ -6,5 +6,10 @@ export interface IStrategyReviewerPoint {
   grossPerMap: number;
   costPerMap: number;
   profitPerMap: number;
+  grossPerHour: number;
+  costPerHour: number;
+  profitPerHour: number;
   mapCount: number;
+  clearTimeMinutes: number;
+  divinePrice?: number;
 }
