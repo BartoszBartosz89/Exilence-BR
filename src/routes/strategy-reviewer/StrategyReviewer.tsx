@@ -77,6 +77,8 @@ const StrategyReviewer = () => {
   const theme = useTheme();
   const [pendingCosts, setPendingCosts] = useState<Record<string, IExternalPrice | null>>({});
   const [costSearchValues, setCostSearchValues] = useState<Record<string, string>>({});
+  const [selectedPresetIds, setSelectedPresetIds] = useState<Record<string, string>>({});
+  const [presetNames, setPresetNames] = useState<Record<string, string>>({});
   const [analysisSearch, setAnalysisSearch] = useState('');
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState('');
@@ -1010,6 +1012,89 @@ const StrategyReviewer = () => {
                                   Add cost
                                 </Button>
                               </Grid>
+                              <Grid item xs={12} md={4}>
+                                <TextField
+                                  select
+                                  fullWidth
+                                  label="Apply cost preset"
+                                  value={selectedPresetIds[strategy.uuid] || ''}
+                                  onChange={(event) =>
+                                    setSelectedPresetIds((current) => ({
+                                      ...current,
+                                      [strategy.uuid]: event.target.value,
+                                    }))
+                                  }
+                                  helperText="Reusable cost setups"
+                                >
+                                  <MenuItem value="">No preset selected</MenuItem>
+                                  {strategyReviewerStore.presets.map((preset) => (
+                                    <MenuItem key={preset.uuid} value={preset.uuid}>
+                                      {preset.name} ({preset.costItems.length})
+                                    </MenuItem>
+                                  ))}
+                                </TextField>
+                              </Grid>
+                              <Grid item xs={12} md={2}>
+                                <Button
+                                  variant="contained"
+                                  fullWidth
+                                  disabled={!selectedPresetIds[strategy.uuid]}
+                                  onClick={() =>
+                                    strategyReviewerStore.applyPresetToStrategy(
+                                      strategy.uuid,
+                                      selectedPresetIds[strategy.uuid]
+                                    )
+                                  }
+                                >
+                                  Apply preset
+                                </Button>
+                              </Grid>
+                              <Grid item xs={12} md={4}>
+                                <TextField
+                                  fullWidth
+                                  label="Preset name"
+                                  value={presetNames[strategy.uuid] || `${strategy.name} costs`}
+                                  onChange={(event) =>
+                                    setPresetNames((current) => ({
+                                      ...current,
+                                      [strategy.uuid]: event.target.value,
+                                    }))
+                                  }
+                                  helperText="Saved from current costs"
+                                />
+                              </Grid>
+                              <Grid item xs={12} md={2}>
+                                <Button
+                                  variant="outlined"
+                                  fullWidth
+                                  disabled={strategy.costItems.length === 0}
+                                  onClick={() =>
+                                    strategyReviewerStore.savePresetFromStrategy(
+                                      strategy.uuid,
+                                      presetNames[strategy.uuid] || `${strategy.name} costs`
+                                    )
+                                  }
+                                >
+                                  Save preset
+                                </Button>
+                              </Grid>
+                              {strategyReviewerStore.presets.length > 0 && (
+                                <Grid item xs={12}>
+                                  <Stack direction="row" spacing={1} flexWrap="wrap">
+                                    {strategyReviewerStore.presets.map((preset) => (
+                                      <Button
+                                        key={preset.uuid}
+                                        size="small"
+                                        color="error"
+                                        startIcon={<DeleteIcon />}
+                                        onClick={() => strategyReviewerStore.deletePreset(preset.uuid)}
+                                      >
+                                        {preset.name}
+                                      </Button>
+                                    ))}
+                                  </Stack>
+                                </Grid>
+                              )}
                             </Grid>
 
                             <Typography

@@ -4,6 +4,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import SettingsIcon from '@mui/icons-material/Settings';
+import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import {
   Divider,
@@ -98,6 +99,19 @@ const NavigationMenu = ({ open, toggleSidenav, handleRedirect }: NavigationMenuP
             </Tooltip>
           </ListItemIcon>
           <ListItemText primary="Strategy reviewer" />
+        </ListItem>
+        <ListItem
+          button
+          key="economy-analysis"
+          selected={location.pathname === '/economy-analysis'}
+          onClick={() => handleRedirect('/economy-analysis')}
+        >
+          <ListItemIcon>
+            <Tooltip title="Economy analysis" placement="right">
+              <QueryStatsIcon />
+            </Tooltip>
+          </ListItemIcon>
+          <ListItemText primary="Economy analysis" />
         </ListItem>
         <ListItem
           button

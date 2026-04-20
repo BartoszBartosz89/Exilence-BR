@@ -29,6 +29,8 @@ This fork focuses on Blight Ravaged gameplay and league-ready economy tooling.
 - Added support for building one archive from multiple files or added snapshots, with merged quantities and weighted snapshot pricing.
 - Added per-archive map counts so archive and strategy analysis can normalize values per map.
 - Added a Strategy Reviewer workspace for comparing archives over time, adding per-map costs, and charting profit per map.
+- Added profit-per-hour strategy analytics with map clear time and chaos/divine display switching.
+- Added an Economy Analysis workspace for PoEDB-driven inflation, deflation and intraday spread scouting with volume filters.
 - Added a repo-side PoEDB league start workflow so bundled links can be refreshed before release instead of asking users to sync them manually.
 - Added a Clear stored snapshots action in the PoEDB tab so users can wipe old PoEDB history and pull fresh league data.
 `;

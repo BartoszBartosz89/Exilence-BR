@@ -37,6 +37,7 @@ import BulkSell from './routes/bulk-sell/BulkSell';
 import Login from './routes/login/Login';
 import NetWorthArchives from './routes/net-worth-archives/NetWorthArchives';
 import NetWorth from './routes/net-worth/NetWorth';
+import EconomyAnalysis from './routes/economy-analysis/EconomyAnalysis';
 import Settings from './routes/settings/Settings';
 import StrategyReviewer from './routes/strategy-reviewer/StrategyReviewer';
 import { electronService } from './services/electron.service';
@@ -110,6 +111,7 @@ const App = ({ error }: Props) => {
                     <Route path="/net-worth" component={NetWorth} />
                     <Route path="/net-worth-archives" component={NetWorthArchives} />
                     <Route path="/strategy-reviewer" component={StrategyReviewer} />
+                    <Route path="/economy-analysis" component={EconomyAnalysis} />
                     <Route path="/settings" component={Settings} />
                     <Route path="/bulk-sell" component={BulkSell} />
                     <Route
