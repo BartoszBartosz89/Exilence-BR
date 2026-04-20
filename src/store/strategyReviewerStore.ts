@@ -6,6 +6,7 @@ import { INetWorthArchiveItem } from '../interfaces/net-worth-archive-item.inter
 import { IStrategyReviewerAnalysis } from '../interfaces/strategy-reviewer-analysis.interface';
 import { IStrategyReviewerCostItem } from '../interfaces/strategy-reviewer-cost.interface';
 import { IStrategyReviewerPoint } from '../interfaces/strategy-reviewer-point.interface';
+import { IStrategyReviewerPreset } from '../interfaces/strategy-reviewer-preset.interface';
 import { IStrategyReviewerStrategy } from '../interfaces/strategy-reviewer-strategy.interface';
 import { IExternalPrice } from '../interfaces/external-price.interface';
 import { RootStore } from './rootStore';
@@ -14,6 +15,7 @@ export class StrategyReviewerStore {
   @persist('list') @observable analyses: IStrategyReviewerAnalysis[] = [];
   @persist @observable activeAnalysisId?: string = undefined;
   @persist('list') @observable legacyStrategies: IStrategyReviewerStrategy[] = [];
+  @persist('list') @observable presets: IStrategyReviewerPreset[] = [];
   @persist @observable legacyRangeStartDate?: string = undefined;
   @persist @observable legacyRangeEndDate?: string = undefined;
   @observable recalculating: boolean = false;
@@ -396,6 +398,50 @@ export class StrategyReviewerStore {
     strategy.cachedPoints = [];
     strategy.calculationSignature = undefined;
     void this.refreshStrategy(strategy.uuid);
+  }
+
+  @action
+  savePresetFromStrategy(strategyId: string, name?: string) {
+    this.ensureMigrated();
+    const strategy = this.activeAnalysis?.strategies.find((entry) => entry.uuid === strategyId);
+    if (!strategy || strategy.costItems.length === 0) {
+      return;
+    }
+
+    const preset: IStrategyReviewerPreset = {
+      uuid: uuidv4(),
+      name: (name || `${strategy.name} costs`).trim(),
+      createdAt: new Date().toISOString(),
+      costItems: strategy.costItems.map((item) => ({
+        ...item,
+        uuid: uuidv4(),
+      })),
+    };
+
+    this.presets.push(preset);
+  }
+
+  @action
+  applyPresetToStrategy(strategyId: string, presetId: string) {
+    this.ensureMigrated();
+    const strategy = this.activeAnalysis?.strategies.find((entry) => entry.uuid === strategyId);
+    const preset = this.presets.find((entry) => entry.uuid === presetId);
+    if (!strategy || !preset) {
+      return;
+    }
+
+    strategy.costItems = preset.costItems.map((item) => ({
+      ...item,
+      uuid: uuidv4(),
+    }));
+    strategy.cachedPoints = [];
+    strategy.calculationSignature = undefined;
+    void this.refreshStrategy(strategy.uuid);
+  }
+
+  @action
+  deletePreset(presetId: string) {
+    this.presets = this.presets.filter((preset) => preset.uuid !== presetId);
   }
 
   @action
