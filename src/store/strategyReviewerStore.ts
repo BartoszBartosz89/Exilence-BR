@@ -99,17 +99,22 @@ export class StrategyReviewerStore {
 
   @computed
   get chartSeries(): IConnectionChartSeries[] {
+    return this.buildSeriesFromPointValue((point) => this.getPointProfitPerMap(point));
+  }
+
+  @computed
+  get profitPerHourChartSeries(): IConnectionChartSeries[] {
+    return this.buildSeriesFromPointValue((point) => this.getPointProfitPerHour(point));
+  }
+
+  private buildSeriesFromPointValue(getValue: (point: IStrategyReviewerPoint) => number) {
     return this.filteredStrategies
       .filter((strategy) => strategy.filteredPoints.length > 0)
       .map((strategy) => ({
         seriesName: strategy.name,
         series: strategy.filteredPoints.map((point) => [
           new Date(point.date).getTime(),
-          +(
-            typeof point.profitPerMap === 'number'
-              ? point.profitPerMap
-              : point.profitValue / Math.max(1, point.mapCount || 1)
-          ).toFixed(2),
+          +getValue(point).toFixed(2),
         ]),
       }));
   }
@@ -142,6 +147,9 @@ export class StrategyReviewerStore {
             latest && typeof latest.profitPerMap === 'number'
               ? latest.profitPerMap
               : (latest?.profitValue || 0) / Math.max(1, latest?.mapCount || 1),
+          grossPerHour: latest ? this.getPointGrossPerHour(latest) : 0,
+          costPerHour: latest ? this.getPointCostPerHour(latest) : 0,
+          profitPerHour: latest ? this.getPointProfitPerHour(latest) : 0,
           mapCount:
             latest?.mapCount ||
             this.getEffectiveMapCount(
@@ -150,6 +158,8 @@ export class StrategyReviewerStore {
                 (archive) => archive.uuid === strategy.archiveId
               )
             ),
+          clearTimeMinutes: latest?.clearTimeMinutes || this.getEffectiveClearTimeMinutes(strategy),
+          averageDivinePrice: this.getAverageDivinePrice(strategy.filteredPoints),
           latestDate: latest?.date,
         };
       })
@@ -251,6 +261,7 @@ export class StrategyReviewerStore {
       uuid: uuidv4(),
       name: `Strategy ${analysis.strategies.length + 1}`,
       archiveId: firstArchiveId,
+      clearTimeMinutes: 3,
       collapsed: false,
       costItems: [],
       cachedPoints: [],
@@ -295,6 +306,25 @@ export class StrategyReviewerStore {
       strategy.mapCountOverride = undefined;
     } else {
       strategy.mapCountOverride = Math.max(1, Math.floor(mapCount));
+    }
+
+    strategy.cachedPoints = [];
+    strategy.calculationSignature = undefined;
+    void this.refreshStrategy(strategy.uuid);
+  }
+
+  @action
+  setStrategyClearTimeMinutes(id: string, clearTimeMinutes?: number) {
+    this.ensureMigrated();
+    const strategy = this.activeAnalysis?.strategies.find((entry) => entry.uuid === id);
+    if (!strategy) {
+      return;
+    }
+
+    if (typeof clearTimeMinutes !== 'number' || !Number.isFinite(clearTimeMinutes)) {
+      strategy.clearTimeMinutes = undefined;
+    } else {
+      strategy.clearTimeMinutes = Math.max(0.1, clearTimeMinutes);
     }
 
     strategy.cachedPoints = [];
@@ -456,8 +486,16 @@ export class StrategyReviewerStore {
     const priceCache = new Map<string, number>();
 
     const mapCount = this.getEffectiveMapCount(strategy, archive);
+    const clearTimeMinutes = this.getEffectiveClearTimeMinutes(strategy);
     const newPoints = missingDates.map((date) =>
-      this.calculatePointForDate(strategy.costItems, archiveItems, mapCount, date, priceCache)
+      this.calculatePointForDate(
+        strategy.costItems,
+        archiveItems,
+        mapCount,
+        clearTimeMinutes,
+        date,
+        priceCache
+      )
     );
 
     strategy.cachedPoints = [...pointsToKeep, ...newPoints].sort((a, b) =>
@@ -471,6 +509,7 @@ export class StrategyReviewerStore {
     costItems: IStrategyReviewerCostItem[],
     archiveItems: INetWorthArchiveItem[],
     mapCount: number,
+    clearTimeMinutes: number,
     date: string,
     priceCache: Map<string, number>
   ): IStrategyReviewerPoint {
@@ -486,6 +525,11 @@ export class StrategyReviewerStore {
     const profitValue = grossValue - costValue;
     const grossPerMap = grossValue / mapCount;
     const profitPerMap = profitValue / mapCount;
+    const mapsPerHour = 60 / clearTimeMinutes;
+    const grossPerHour = grossPerMap * mapsPerHour;
+    const costPerHour = costPerMap * mapsPerHour;
+    const profitPerHour = profitPerMap * mapsPerHour;
+    const divinePrice = this.resolveDivinePriceForDate(date, priceCache);
 
     return {
       date,
@@ -495,7 +539,12 @@ export class StrategyReviewerStore {
       grossPerMap,
       costPerMap,
       profitPerMap,
+      grossPerHour,
+      costPerHour,
+      profitPerHour,
       mapCount,
+      clearTimeMinutes,
+      divinePrice,
     };
   }
 
@@ -599,6 +648,95 @@ export class StrategyReviewerStore {
     return 1;
   }
 
+  getEffectiveClearTimeMinutes(strategy: Pick<IStrategyReviewerStrategy, 'clearTimeMinutes'>) {
+    if (typeof strategy.clearTimeMinutes === 'number' && Number.isFinite(strategy.clearTimeMinutes)) {
+      return Math.max(0.1, strategy.clearTimeMinutes);
+    }
+
+    return 3;
+  }
+
+  private getPointGrossPerMap(point: IStrategyReviewerPoint) {
+    return typeof point.grossPerMap === 'number'
+      ? point.grossPerMap
+      : point.grossValue / Math.max(1, point.mapCount || 1);
+  }
+
+  private getPointCostPerMap(point: IStrategyReviewerPoint) {
+    return typeof point.costPerMap === 'number'
+      ? point.costPerMap
+      : point.costValue / Math.max(1, point.mapCount || 1);
+  }
+
+  private getPointProfitPerMap(point: IStrategyReviewerPoint) {
+    return typeof point.profitPerMap === 'number'
+      ? point.profitPerMap
+      : point.profitValue / Math.max(1, point.mapCount || 1);
+  }
+
+  private getPointGrossPerHour(point: IStrategyReviewerPoint) {
+    if (typeof point.grossPerHour === 'number') {
+      return point.grossPerHour;
+    }
+
+    return this.getPointGrossPerMap(point) * (60 / Math.max(0.1, point.clearTimeMinutes || 3));
+  }
+
+  private getPointCostPerHour(point: IStrategyReviewerPoint) {
+    if (typeof point.costPerHour === 'number') {
+      return point.costPerHour;
+    }
+
+    return this.getPointCostPerMap(point) * (60 / Math.max(0.1, point.clearTimeMinutes || 3));
+  }
+
+  private getPointProfitPerHour(point: IStrategyReviewerPoint) {
+    if (typeof point.profitPerHour === 'number') {
+      return point.profitPerHour;
+    }
+
+    return this.getPointProfitPerMap(point) * (60 / Math.max(0.1, point.clearTimeMinutes || 3));
+  }
+
+  private getAverageDivinePrice(points: IStrategyReviewerPoint[]) {
+    const values = points
+      .map((point) => point.divinePrice)
+      .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0);
+
+    if (values.length === 0) {
+      return this.rootStore.priceStore.divinePrice || 1;
+    }
+
+    return values.reduce((sum, value) => sum + value, 0) / values.length;
+  }
+
+  private resolveDivinePriceForDate(date: string, priceCache: Map<string, number>) {
+    const cacheKey = `${date}|__divine_orb__`;
+    const cached = priceCache.get(cacheKey);
+    if (typeof cached === 'number') {
+      return cached;
+    }
+
+    const divinePrice = this.rootStore.priceStore.activePricesWithCustomValues?.find(
+      (price) => price.name === 'Divine Orb'
+    );
+    let value = this.rootStore.priceStore.divinePrice || 1;
+
+    if (divinePrice && this.rootStore.settingStore.pricingModel !== 'traditional') {
+      const poedbValue = this.rootStore.poeDbPriceStore.getClosestMetricPriceForExternalPrice(
+        divinePrice,
+        this.rootStore.settingStore.pricingModel,
+        date
+      );
+      if (typeof poedbValue === 'number' && Number.isFinite(poedbValue) && poedbValue > 0) {
+        value = poedbValue;
+      }
+    }
+
+    priceCache.set(cacheKey, value);
+    return value;
+  }
+
   @action
   private ensureMigrated() {
     if (this.analyses.length > 0) {
@@ -640,10 +778,11 @@ export class StrategyReviewerStore {
     archive: { uuid: string; sources?: { uuid: string }[]; mapCount?: number }
   ) {
     return JSON.stringify({
-      engineVersion: 3,
+      engineVersion: 4,
       archiveId: archive.uuid,
       sourceIds: (archive.sources || []).map((source) => source.uuid),
       mapCount: this.getEffectiveMapCount(strategy, archive),
+      clearTimeMinutes: this.getEffectiveClearTimeMinutes(strategy),
       pricingModel: this.rootStore.settingStore.pricingModel,
       costs: strategy.costItems
         .map((item) => ({

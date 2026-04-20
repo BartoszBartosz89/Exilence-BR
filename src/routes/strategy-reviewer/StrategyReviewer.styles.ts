@@ -173,8 +173,13 @@ const useStyles = makeStyles((theme) => ({
   },
   addStrategyRow: {
     display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(2),
     justifyContent: 'flex-start',
     marginBottom: theme.spacing(2),
+  },
+  currencyToggle: {
+    marginLeft: theme.spacing(1),
   },
   costRow: {
     display: 'grid',
