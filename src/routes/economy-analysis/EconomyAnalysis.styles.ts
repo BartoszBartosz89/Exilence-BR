@@ -8,7 +8,7 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(2),
   },
   controls: {
-    marginBottom: theme.spacing(2),
+    marginBottom: 0,
   },
   intro: {
     maxWidth: 980,
@@ -19,8 +19,54 @@ const useStyles = makeStyles((theme) => ({
   tableWidget: {
     marginTop: theme.spacing(2),
   },
+  sectionWidget: {
+    marginTop: theme.spacing(2),
+  },
+  sectionHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: theme.spacing(2),
+  },
+  sectionTitleBlock: {
+    minWidth: 0,
+  },
+  sectionActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1),
+    flexShrink: 0,
+  },
+  collapsibleTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1),
+  },
+  tableHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: theme.spacing(2),
+  },
+  tableHeaderActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1),
+    flexShrink: 0,
+  },
   tableContainer: {
     maxHeight: 460,
+  },
+  filterPopover: {
+    width: 280,
+    padding: theme.spacing(2),
+  },
+  filterOptions: {
+    display: 'flex',
+    flexDirection: 'column',
+    maxHeight: 260,
+    overflowY: 'auto',
+    paddingTop: theme.spacing(1),
   },
   itemCell: {
     display: 'flex',
