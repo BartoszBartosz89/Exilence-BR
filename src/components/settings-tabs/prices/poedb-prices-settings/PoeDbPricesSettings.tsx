@@ -48,6 +48,49 @@ const PoeDbPricesSettings = () => {
   >('create-copy');
   const [priceSetName, setPriceSetName] = React.useState('');
   const [deleteSetOpen, setDeleteSetOpen] = React.useState(false);
+  const actionButtonSx = {
+    height: 40,
+    minHeight: 40,
+    color: 'primary.light',
+    borderColor: 'primary.main',
+    '&:hover': {
+      borderColor: 'primary.light',
+      backgroundColor: 'rgba(194, 24, 91, 0.12)',
+    },
+    '&.Mui-disabled': {
+      color: 'rgba(255, 255, 255, 0.36)',
+      borderColor: 'rgba(255, 255, 255, 0.18)',
+    },
+  };
+  const dangerButtonSx = {
+    height: 40,
+    minHeight: 40,
+    color: 'error.light',
+    borderColor: 'error.main',
+    '&:hover': {
+      borderColor: 'error.light',
+      backgroundColor: 'rgba(211, 47, 47, 0.12)',
+    },
+    '&.Mui-disabled': {
+      color: 'rgba(255, 255, 255, 0.36)',
+      borderColor: 'rgba(255, 255, 255, 0.18)',
+    },
+  };
+  const tableActionButtonSx = {
+    color: 'primary.light',
+    '& .MuiButton-startIcon': {
+      color: 'primary.light',
+    },
+    '&:hover': {
+      backgroundColor: 'rgba(194, 24, 91, 0.12)',
+    },
+    '&.Mui-disabled': {
+      color: 'rgba(255, 255, 255, 0.36)',
+      '& .MuiButton-startIcon': {
+        color: 'rgba(255, 255, 255, 0.36)',
+      },
+    },
+  };
 
   if (!(uiStateStore.initiated && uiStateStore.validated)) {
     return <>Waiting for response from price source...</>;
@@ -204,7 +247,7 @@ const PoeDbPricesSettings = () => {
         </Grid>
 
         <Grid item xs={12}>
-          <Box display="flex" flexWrap="wrap" gap={1} alignItems="center">
+          <Box display="flex" flexWrap="wrap" gap={1} alignItems="flex-end">
             <Box minWidth={260}>
               <Typography variant="caption" color="textSecondary">
                 Active price set
@@ -226,18 +269,19 @@ const PoeDbPricesSettings = () => {
               </Select>
             </Box>
 
-            <Button variant="outlined" onClick={openCreateSetDialog}>
+            <Button variant="outlined" sx={actionButtonSx} onClick={openCreateSetDialog}>
               New copy
             </Button>
-            <Button variant="outlined" onClick={openCreateEmptySetDialog}>
+            <Button variant="outlined" sx={actionButtonSx} onClick={openCreateEmptySetDialog}>
               New empty
             </Button>
-            <Button variant="outlined" onClick={openRenameSetDialog}>
+            <Button variant="outlined" sx={actionButtonSx} onClick={openRenameSetDialog}>
               Rename
             </Button>
             <Button
               variant="outlined"
               color="secondary"
+              sx={actionButtonSx}
               startIcon={<GetAppIcon />}
               onClick={handleExportPriceSet}
             >
@@ -246,6 +290,7 @@ const PoeDbPricesSettings = () => {
             <Button
               variant="outlined"
               color="secondary"
+              sx={actionButtonSx}
               startIcon={<UploadFileIcon />}
               onClick={() => importInputRef.current?.click()}
             >
@@ -254,6 +299,7 @@ const PoeDbPricesSettings = () => {
             <Button
               variant="outlined"
               color="error"
+              sx={dangerButtonSx}
               startIcon={<DeleteIcon />}
               disabled={poeDbPriceStore.priceSets.length <= 1}
               onClick={() => setDeleteSetOpen(true)}
@@ -285,6 +331,7 @@ const PoeDbPricesSettings = () => {
             <Button
               variant="outlined"
               color="primary"
+              sx={actionButtonSx}
               disabled={poeDbPriceStore.pulling}
               onClick={() => poeDbPriceStore.pullHistoryForResolvedItems(true)}
             >
@@ -294,6 +341,7 @@ const PoeDbPricesSettings = () => {
             <Button
               variant="outlined"
               color="secondary"
+              sx={actionButtonSx}
               startIcon={<DeleteSweepIcon />}
               disabled={poeDbPriceStore.pulling}
               onClick={() => {
@@ -308,6 +356,7 @@ const PoeDbPricesSettings = () => {
               <Button
                 variant="outlined"
                 color="secondary"
+                sx={actionButtonSx}
                 startIcon={<StopCircleIcon />}
                 onClick={() => {
                   poeDbPriceStore.stopResolve();
@@ -445,6 +494,7 @@ const PoeDbPricesSettings = () => {
                         <Button
                           size="small"
                           variant="text"
+                          sx={tableActionButtonSx}
                           startIcon={<OpenInNewIcon />}
                           href={row.url}
                           target="_blank"
@@ -461,6 +511,7 @@ const PoeDbPricesSettings = () => {
                         <Button
                           size="small"
                           variant="text"
+                          sx={tableActionButtonSx}
                           startIcon={<RefreshIcon />}
                           disabled={poeDbPriceStore.pulling}
                           onClick={() => poeDbPriceStore.pullHistoryForUrl(row.url as string, true)}

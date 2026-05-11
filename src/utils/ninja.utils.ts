@@ -1,13 +1,15 @@
 export function getNinjaLeagueUrl(league: string) {
-  if (league === 'hardcore' || league === 'standard') {
-    return league;
-  } else {
-    if (league.indexOf('hardcore') > -1) {
-      return 'challengehc';
-    } else {
-      return 'challenge';
-    }
+  const normalizedLeague = league.toLowerCase();
+
+  if (normalizedLeague === 'hardcore' || normalizedLeague === 'standard') {
+    return normalizedLeague;
   }
+
+  if (normalizedLeague.startsWith('hardcore ')) {
+    return `${normalizedLeague.replace('hardcore ', '').replace(/\s/g, '')}hc`;
+  }
+
+  return normalizedLeague.replace(/\s/g, '');
 }
 
 export function getNinjaTypeUrl(type: string) {

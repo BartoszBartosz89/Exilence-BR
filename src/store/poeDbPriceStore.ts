@@ -277,9 +277,26 @@ export class PoeDbPriceStore {
     try {
       const parsed = JSON.parse(text);
       const importedSet = this.parseImportedPriceSet(parsed);
-      this.priceSets.push(importedSet);
-      this.activatePriceSet(importedSet.uuid);
-      this.importExportMessage = `Imported price set "${importedSet.name}".`;
+      const activeSet = this.activePriceSet;
+
+      if (!activeSet) {
+        this.priceSets.push(importedSet);
+        this.activatePriceSet(importedSet.uuid);
+        this.importExportMessage = `Imported price set "${importedSet.name}".`;
+        return;
+      }
+
+      activeSet.mappings = this.cloneMappings(importedSet.mappings);
+      activeSet.urlHistories = this.cloneUrlHistories(importedSet.urlHistories);
+      activeSet.selectedDate = importedSet.selectedDate;
+      activeSet.updatedAt = new Date().toISOString();
+
+      this.mappings = this.cloneMappings(activeSet.mappings);
+      this.urlHistories = this.cloneUrlHistories(activeSet.urlHistories);
+      this.selectedDate = activeSet.selectedDate;
+      this.error = undefined;
+      this.importExportMessage = `Imported "${importedSet.name}" into "${activeSet.name}".`;
+      this.syncMappingsFromPrices();
     } catch (e: any) {
       this.error = e?.message || 'Could not import PoEDB price set.';
     }
