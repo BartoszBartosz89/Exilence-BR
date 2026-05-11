@@ -7,11 +7,11 @@ import { AppExitTypes } from '../../../../store/settingStore';
 
 const APP_EXIT_ACTIONS = [
   {
-    label: 'Minimize Exilence CE to the system tray',
+    label: 'Minimize Exilence BR to the system tray',
     value: 'minimize-to-tray',
     id: 'minimize-to-tray',
   },
-  { label: 'Exit Exilence CE completely', value: 'exit', id: 'exit' },
+  { label: 'Exit Exilence BR completely', value: 'exit', id: 'exit' },
 ];
 
 const AppExitActionsSettings = () => {

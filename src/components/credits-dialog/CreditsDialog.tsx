@@ -19,6 +19,12 @@ const creditsMarkdown = `
 - PoEDB-driven pricing, history tracking and link maintenance
 - Net worth archive workflows for saved and imported economy snapshots
 
+## Fork notice
+
+Exilence BR is an unofficial community fork of Exilence CE. It is not affiliated with or endorsed by Grinding Gear Games in any way.
+
+The app currently uses the existing Exilence backend for Path of Exile OAuth while that service remains available. Do not enter your Path of Exile password into this app; authorization happens through pathofexile.com.
+
 ## Acknowledgements
 
 - https://poe.ninja for price data

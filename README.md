@@ -12,6 +12,7 @@ The original app was Exilence CE, previously Exilence Next and ExileParty.
 - [Changelog](https://github.com/BartoszBartosz89/Exilence-BR/blob/master/CHANGELOG.md)
 - [Platform](#platform)
 - [Release and updates](#release-and-updates)
+- [Security and privacy](#security-and-privacy)
 - [Contributing with development](#contributing-with-development)
 - [PoEDB historical price links](#poedb-historical-price-links)
 - [Contact us](#contact-us)
@@ -22,6 +23,8 @@ The original app was Exilence CE, previously Exilence Next and ExileParty.
 ## Download
 
 Download the latest release at https://github.com/BartoszBartosz89/Exilence-BR/releases/latest
+
+Windows builds may be unsigned. If Microsoft SmartScreen warns you, inspect the source code and build locally if you are not comfortable running the published installer.
 
 ## Platform
 
@@ -45,6 +48,20 @@ The Windows updater reads release metadata from this repository's GitHub Release
 - `latest.yml`
 
 The installer uses a separate app identity from upstream Exilence CE, so it should install and update as Exilence BR instead of overwriting the upstream app.
+
+Release checklist:
+
+- `docs/release-checklist.md`
+
+## Security and privacy
+
+Exilence BR is an unofficial community fork of Exilence CE. This product is not affiliated with or endorsed by Grinding Gear Games in any way.
+
+The app currently keeps the existing Exilence backend/OAuth flow for compatibility. Do not enter your Path of Exile password directly into Exilence BR; authorization should happen through pathofexile.com.
+
+Privacy notes:
+
+- `PRIVACY.md`
 
 ## Contributing with development
 
