@@ -4,6 +4,7 @@ import Popper, { PopperProps } from '@mui/material/Popper';
 import Typography from '@mui/material/Typography';
 import RedirectIcon from '@mui/icons-material/CallMade';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import BugReportIcon from '@mui/icons-material/BugReport';
 import HistoryIcon from '@mui/icons-material/History';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
@@ -87,6 +88,14 @@ const SupportPanel = ({ isOpen = false, setIsOpen, anchorEl = null }: SupportPan
                   </li>
                 )}
                 <div className={classes.separator} />
+                <a
+                  href="https://github.com/BartoszBartosz89/Exilence-BR/issues"
+                  onClick={(e) => handleLinkClick(e)}
+                  className={classes.optionLink}
+                >
+                  <Typography variant="body2">Report an issue</Typography>
+                  <BugReportIcon className={classes.icon} />
+                </a>
                 <a
                   href="https://www.youtube.com/@RavagedBlightScience/videos"
                   onClick={(e) => handleLinkClick(e)}

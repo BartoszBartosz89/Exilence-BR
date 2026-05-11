@@ -1,6 +1,8 @@
 {
-  "name": "exilence-ce-app",
+  "name": "exilence-br-app",
   "version": "3.28.0",
+  "description": "Community fork of Exilence CE for Path of Exile stash valuation and economy analysis.",
+  "author": "BartoszBartosz89",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.4.1",
@@ -122,8 +124,9 @@
   "build": {
     "extends": null,
     "generateUpdatesFilesForAllChannels": true,
-    "productName": "Exilence CE",
-    "appId": "com.exilence.exilence-ce-app",
+    "productName": "Exilence BR",
+    "appId": "com.exilence-br.app",
+    "artifactName": "Exilence-BR-${version}.${ext}",
     "files": [
       "build/**/*",
       "public/icon.*",
@@ -138,8 +141,8 @@
     },
     "publish": {
       "provider": "github",
-      "repo": "exilence-ce",
-      "owner": "exilence-ce"
+      "repo": "Exilence-BR",
+      "owner": "BartoszBartosz89"
     },
     "win": {
       "icon": "build/icon.ico"
@@ -153,7 +156,6 @@
       "category": "public.app-category.utilities"
     },
     "linux": {
-      "artifactName": "Exilence-CE-${version}.${ext}",
       "icon": "build/icon512x512.png",
       "target": "AppImage",
       "category": "Utility"
