@@ -1,5 +1,6 @@
 import moment from 'moment';
 import { rootStore } from '..';
+import { IApiPricedItem } from '../interfaces/api/api-priced-item.interface';
 import { IApiSnapshot } from '../interfaces/api/api-snapshot.interface';
 import { IApiStashTabSnapshot } from '../interfaces/api/api-stash-tab-snapshot.interface';
 import { IApiStashTabPricedItem } from '../interfaces/api/api-stashtab-priceditem.interface';
@@ -21,17 +22,52 @@ export const mapSnapshotToApiSnapshot = (snapshot: Snapshot, stashTabs?: IStashT
           const foundTab = filteredLeagueTabs?.find((lt) => lt.id === st.stashTabId);
           return {
             uuid: st.uuid,
-            stashTabId: foundTab?.id,
-            pricedItems: st.pricedItems,
-            index: foundTab?.index,
+            stashTabId: foundTab?.id ?? st.stashTabId,
+            pricedItems: st.pricedItems.map(mapPricedItemToApiPricedItem) as any,
+            index: foundTab?.index ?? 0,
             value: st.value,
-            color: foundTab ? foundTab.metadata.colour : undefined,
-            name: foundTab?.name,
+            color: foundTab ? foundTab.metadata.colour : '',
+            name: foundTab?.name ?? st.stashTabId,
           } as IApiStashTabSnapshot;
         })
-      : snapshot.stashTabSnapshots,
+      : snapshot.stashTabSnapshots.map((st) => ({
+          ...st,
+          pricedItems: st.pricedItems.map(mapPricedItemToApiPricedItem) as any,
+        })),
   } as IApiSnapshot;
 };
+
+const finiteNumber = (value: number | undefined, fallback: number = 0) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+
+const mapPricedItemToApiPricedItem = (item: IPricedItem): IApiPricedItem => ({
+  uuid: item.uuid,
+  itemId: item.itemId,
+  name: item.name,
+  group: item.group,
+  typeLine: item.typeLine,
+  frameType: finiteNumber(item.frameType),
+  total: finiteNumber(item.total),
+  calculated: finiteNumber(item.calculated),
+  max: finiteNumber(item.max),
+  elder: !!item.elder,
+  shaper: !!item.shaper,
+  mean: finiteNumber(item.mean),
+  median: finiteNumber(item.median),
+  min: finiteNumber(item.min),
+  mode: finiteNumber(item.mode),
+  ilvl: finiteNumber(item.ilvl),
+  stackSize: finiteNumber(item.stackSize),
+  totalStacksize: finiteNumber(item.totalStacksize),
+  links: finiteNumber(item.links),
+  quality: finiteNumber(item.quality),
+  level: finiteNumber(item.level),
+  corrupted: !!item.corrupted,
+  icon: item.icon,
+  sockets: finiteNumber(item.sockets),
+  variant: item.variant,
+  tier: finiteNumber(item.tier),
+});
 
 export const mapSnapshotsToStashTabPricedItems = (snapshot: Snapshot, stashTabs: IStashTab[]) => {
   return stashTabs

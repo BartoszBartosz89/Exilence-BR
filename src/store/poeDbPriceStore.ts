@@ -2,11 +2,13 @@ import { action, computed, makeObservable, observable, reaction, runInAction } f
 import { persist } from 'mobx-persist';
 import { IExternalPrice } from '../interfaces/external-price.interface';
 import { IPoeDbItemMapping } from '../interfaces/poedb-item-mapping.interface';
+import { IPoeDbPriceSet, IPoeDbPriceSetExport } from '../interfaces/poedb-price-set.interface';
 import { IPoeDbPriceHistoryRow } from '../interfaces/poedb-price-history.interface';
 import { IPoeDbUrlHistory } from '../interfaces/poedb-url-history.interface';
 import { poeDbService } from '../services/poedb.service';
 import type { PricingModel } from './settingStore';
 import { RootStore } from './rootStore';
+import { v4 as uuidv4 } from 'uuid';
 
 const POEDB_PULL_CONCURRENCY = 2;
 const POEDB_PULL_THROTTLE_MS = 40;
@@ -15,6 +17,8 @@ export class PoeDbPriceStore {
   @persist('list') @observable mappings: IPoeDbItemMapping[] = [];
   @persist('list') @observable urlHistories: IPoeDbUrlHistory[] = [];
   @persist @observable selectedDate?: string = undefined;
+  @persist('list') @observable priceSets: IPoeDbPriceSet[] = [];
+  @persist @observable activePriceSetId?: string = undefined;
 
   @observable resolving: boolean = false;
   @observable pulling: boolean = false;
@@ -31,6 +35,7 @@ export class PoeDbPriceStore {
   };
 
   @observable error?: string = undefined;
+  @observable importExportMessage?: string = undefined;
 
   private cancelResolve: boolean = false;
   private cancelPull: boolean = false;
@@ -66,6 +71,16 @@ export class PoeDbPriceStore {
     const set = new Set<string>();
     this.urlHistories.forEach((entry) => entry.history.forEach((h) => set.add(h.date)));
     return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }
+
+  @computed
+  get activePriceSet() {
+    return this.priceSets.find((set) => set.uuid === this.activePriceSetId);
+  }
+
+  @computed
+  get activePriceSetName() {
+    return this.activePriceSet?.name || 'PoEDB prices';
   }
 
   @computed
@@ -143,11 +158,14 @@ export class PoeDbPriceStore {
 
   @action
   setSelectedDate(date?: string) {
+    this.ensurePriceSetsInitialized();
     this.selectedDate = date;
+    this.syncActivePriceSetData();
   }
 
   @action
   clearStoredSnapshots() {
+    this.ensurePriceSetsInitialized();
     this.stopPull();
     this.urlHistories = [];
     this.selectedDate = undefined;
@@ -158,6 +176,130 @@ export class PoeDbPriceStore {
       success: 0,
       skipped: 0,
     };
+    this.syncActivePriceSetData();
+  }
+
+  @action
+  createPriceSet(name?: string, copyCurrent: boolean = true) {
+    this.ensurePriceSetsInitialized();
+    const nowIso = new Date().toISOString();
+    const priceSet: IPoeDbPriceSet = {
+      uuid: uuidv4(),
+      name: this.normalizePriceSetName(name, `PoEDB prices ${this.priceSets.length + 1}`),
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      mappings: copyCurrent ? this.cloneMappings(this.mappings) : [],
+      urlHistories: copyCurrent ? this.cloneUrlHistories(this.urlHistories) : [],
+      selectedDate: copyCurrent ? this.selectedDate : undefined,
+    };
+
+    this.priceSets.push(priceSet);
+    this.activatePriceSet(priceSet.uuid);
+    this.importExportMessage = `Created price set "${priceSet.name}".`;
+  }
+
+  @action
+  activatePriceSet(priceSetId: string) {
+    this.ensurePriceSetsInitialized();
+    const priceSet = this.priceSets.find((set) => set.uuid === priceSetId);
+    if (!priceSet) {
+      return;
+    }
+
+    this.activePriceSetId = priceSet.uuid;
+    this.mappings = this.cloneMappings(priceSet.mappings);
+    this.urlHistories = this.cloneUrlHistories(priceSet.urlHistories);
+    this.selectedDate = priceSet.selectedDate;
+    this.error = undefined;
+    this.importExportMessage = `Switched to "${priceSet.name}".`;
+
+    this.syncMappingsFromPrices();
+  }
+
+  @action
+  renamePriceSet(priceSetId: string, name: string) {
+    this.ensurePriceSetsInitialized();
+    const priceSet = this.priceSets.find((set) => set.uuid === priceSetId);
+    if (!priceSet) {
+      return;
+    }
+
+    priceSet.name = this.normalizePriceSetName(name, priceSet.name);
+    priceSet.updatedAt = new Date().toISOString();
+    this.importExportMessage = `Renamed price set to "${priceSet.name}".`;
+  }
+
+  @action
+  deletePriceSet(priceSetId: string) {
+    this.ensurePriceSetsInitialized();
+    if (this.priceSets.length <= 1) {
+      this.error = 'At least one PoEDB price set is required.';
+      return;
+    }
+
+    const index = this.priceSets.findIndex((set) => set.uuid === priceSetId);
+    if (index === -1) {
+      return;
+    }
+
+    const [removed] = this.priceSets.splice(index, 1);
+    if (this.activePriceSetId === priceSetId) {
+      const next = this.priceSets[Math.max(0, index - 1)] || this.priceSets[0];
+      this.activatePriceSet(next.uuid);
+    }
+    this.importExportMessage = `Deleted price set "${removed.name}".`;
+  }
+
+  buildActivePriceSetExport(): IPoeDbPriceSetExport {
+    this.ensurePriceSetsInitialized();
+    this.syncActivePriceSetData();
+    const active = this.activePriceSet;
+
+    return {
+      exportType: 'exilence-poedb-price-set',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      priceSet: active
+        ? this.clonePriceSet(active)
+        : this.createPriceSetSnapshot(
+            'PoEDB prices',
+            this.mappings,
+            this.urlHistories,
+            this.selectedDate
+          ),
+    };
+  }
+
+  @action
+  importPriceSetFromJson(text: string) {
+    this.ensurePriceSetsInitialized();
+
+    try {
+      const parsed = JSON.parse(text);
+      const importedSet = this.parseImportedPriceSet(parsed);
+      const activeSet = this.activePriceSet;
+
+      if (!activeSet) {
+        this.priceSets.push(importedSet);
+        this.activatePriceSet(importedSet.uuid);
+        this.importExportMessage = `Imported price set "${importedSet.name}".`;
+        return;
+      }
+
+      activeSet.mappings = this.cloneMappings(importedSet.mappings);
+      activeSet.urlHistories = this.cloneUrlHistories(importedSet.urlHistories);
+      activeSet.selectedDate = importedSet.selectedDate;
+      activeSet.updatedAt = new Date().toISOString();
+
+      this.mappings = this.cloneMappings(activeSet.mappings);
+      this.urlHistories = this.cloneUrlHistories(activeSet.urlHistories);
+      this.selectedDate = activeSet.selectedDate;
+      this.error = undefined;
+      this.importExportMessage = `Imported "${importedSet.name}" into "${activeSet.name}".`;
+      this.syncMappingsFromPrices();
+    } catch (e: any) {
+      this.error = e?.message || 'Could not import PoEDB price set.';
+    }
   }
 
   getMetricPriceForExternalPrice(
@@ -280,6 +422,7 @@ export class PoeDbPriceStore {
 
   @action
   syncMappingsFromPrices() {
+    this.ensurePriceSetsInitialized();
     this.migrateLegacyHistoryToUrlCache();
     const nowIso = new Date().toISOString();
 
@@ -304,6 +447,8 @@ export class PoeDbPriceStore {
     if (this.availableDates.length > 0 && !this.selectedDate) {
       this.selectedDate = this.availableDates[this.availableDates.length - 1];
     }
+
+    this.syncActivePriceSetData();
   }
 
   @action
@@ -387,6 +532,7 @@ export class PoeDbPriceStore {
       if (this.availableDates.length > 0) {
         this.selectedDate = this.availableDates[this.availableDates.length - 1];
       }
+      this.syncActivePriceSetData();
     });
   }
 
@@ -417,6 +563,7 @@ export class PoeDbPriceStore {
           this.pullProgress.done = 1;
           this.pullProgress.skipped = 1;
           this.pulling = false;
+          this.syncActivePriceSetData();
         });
         return;
       }
@@ -431,6 +578,7 @@ export class PoeDbPriceStore {
         if (this.availableDates.length > 0) {
           this.selectedDate = this.availableDates[this.availableDates.length - 1];
         }
+        this.syncActivePriceSetData();
       });
     } catch (e: any) {
       runInAction(() => {
@@ -438,6 +586,7 @@ export class PoeDbPriceStore {
         this.pullProgress.done = 1;
         this.pulling = false;
         this.error = e?.message || 'Pull failed';
+        this.syncActivePriceSetData();
       });
     }
   }
@@ -527,6 +676,160 @@ export class PoeDbPriceStore {
       mapping.history = undefined;
       mapping.historyFetchedAt = undefined;
     });
+  }
+
+  @action
+  ensurePriceSetsInitialized() {
+    if (!Array.isArray(this.mappings)) {
+      this.mappings = [];
+    }
+    if (!Array.isArray(this.urlHistories)) {
+      this.urlHistories = [];
+    }
+    if (!Array.isArray(this.priceSets)) {
+      this.priceSets = [];
+    }
+
+    if (this.priceSets.length > 0) {
+      if (
+        !this.activePriceSetId ||
+        !this.priceSets.some((set) => set.uuid === this.activePriceSetId)
+      ) {
+        this.activePriceSetId = this.priceSets[0].uuid;
+      }
+      const activeSet = this.priceSets.find((set) => set.uuid === this.activePriceSetId);
+      if (activeSet && activeSet.urlHistories.length === 0 && this.urlHistories.length > 0) {
+        this.syncActivePriceSetData();
+      }
+      return;
+    }
+
+    const nowIso = new Date().toISOString();
+    const initialSet: IPoeDbPriceSet = {
+      uuid: uuidv4(),
+      name: 'Default PoEDB prices',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      mappings: this.cloneMappings(this.mappings),
+      urlHistories: this.cloneUrlHistories(this.urlHistories),
+      selectedDate: this.selectedDate,
+    };
+    this.priceSets = [initialSet];
+    this.activePriceSetId = initialSet.uuid;
+  }
+
+  private syncActivePriceSetData() {
+    if (!this.activePriceSetId) {
+      return;
+    }
+
+    const priceSet = this.priceSets.find((set) => set.uuid === this.activePriceSetId);
+    if (!priceSet) {
+      return;
+    }
+
+    priceSet.mappings = this.cloneMappings(this.mappings);
+    priceSet.urlHistories = this.cloneUrlHistories(this.urlHistories);
+    priceSet.selectedDate = this.selectedDate;
+    priceSet.updatedAt = new Date().toISOString();
+  }
+
+  private cloneMappings(mappings: IPoeDbItemMapping[]) {
+    return mappings.map((mapping) => ({
+      ...mapping,
+      history: mapping.history ? this.cloneHistoryRows(mapping.history) : undefined,
+    }));
+  }
+
+  private cloneUrlHistories(histories: IPoeDbUrlHistory[]) {
+    return histories.map((entry) => ({
+      ...entry,
+      history: this.cloneHistoryRows(entry.history || []),
+    }));
+  }
+
+  private cloneHistoryRows(history: IPoeDbPriceHistoryRow[]) {
+    return history.map((row) => ({ ...row }));
+  }
+
+  private clonePriceSet(priceSet: IPoeDbPriceSet): IPoeDbPriceSet {
+    return {
+      ...priceSet,
+      mappings: this.cloneMappings(priceSet.mappings || []),
+      urlHistories: this.cloneUrlHistories(priceSet.urlHistories || []),
+    };
+  }
+
+  private createPriceSetSnapshot(
+    name: string,
+    mappings: IPoeDbItemMapping[],
+    urlHistories: IPoeDbUrlHistory[],
+    selectedDate?: string
+  ): IPoeDbPriceSet {
+    const nowIso = new Date().toISOString();
+    return {
+      uuid: uuidv4(),
+      name,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      mappings: this.cloneMappings(mappings),
+      urlHistories: this.cloneUrlHistories(urlHistories),
+      selectedDate,
+    };
+  }
+
+  private parseImportedPriceSet(parsed: any): IPoeDbPriceSet {
+    const rawSet =
+      parsed?.exportType === 'exilence-poedb-price-set'
+        ? parsed.priceSet
+        : parsed?.priceSet || parsed;
+    if (!rawSet || !Array.isArray(rawSet.urlHistories)) {
+      throw new Error('Selected file is not a valid PoEDB price set export.');
+    }
+
+    const nowIso = new Date().toISOString();
+    return {
+      uuid: uuidv4(),
+      name: this.normalizePriceSetName(
+        rawSet.name,
+        `Imported PoEDB prices ${this.priceSets.length + 1}`
+      ),
+      createdAt: typeof rawSet.createdAt === 'string' ? rawSet.createdAt : nowIso,
+      updatedAt: nowIso,
+      mappings: Array.isArray(rawSet.mappings) ? this.cloneMappings(rawSet.mappings) : [],
+      urlHistories: this.sanitizeImportedHistories(rawSet.urlHistories),
+      selectedDate: typeof rawSet.selectedDate === 'string' ? rawSet.selectedDate : undefined,
+    };
+  }
+
+  private sanitizeImportedHistories(histories: any[]): IPoeDbUrlHistory[] {
+    return histories
+      .filter((entry) => typeof entry?.url === 'string' && Array.isArray(entry.history))
+      .map((entry) => ({
+        url: entry.url,
+        history: entry.history
+          .filter((row: any) => typeof row?.date === 'string')
+          .map((row: any) => ({
+            date: row.date,
+            open: Number(row.open) || 0,
+            close: Number(row.close) || 0,
+            low: Number(row.low) || 0,
+            high: Number(row.high) || 0,
+            rate: Number(row.rate) || 0,
+            volume: Number(row.volume) || 0,
+          }))
+          .sort((a: IPoeDbPriceHistoryRow, b: IPoeDbPriceHistoryRow) =>
+            a.date.localeCompare(b.date)
+          ),
+        historyFetchedAt:
+          typeof entry.historyFetchedAt === 'string' ? entry.historyFetchedAt : undefined,
+        lastError: typeof entry.lastError === 'string' ? entry.lastError : undefined,
+      }));
+  }
+
+  private normalizePriceSetName(name: string | undefined, fallback: string) {
+    const trimmed = (name || '').trim();
+    return trimmed || fallback;
   }
 
   getMappedUrlForExternalPrice(

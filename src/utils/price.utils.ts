@@ -42,7 +42,7 @@ export function getExternalPriceFromNinjaItem(
   type: string,
   league: string
 ) {
-  const detailsUrl = `${AppConfig.poeNinjaBaseUrl}/${getNinjaLeagueUrl(
+  const detailsUrl = `${AppConfig.poeNinjaBaseUrl}/poe1/economy/${getNinjaLeagueUrl(
     league.toLowerCase()
   )}/${getNinjaTypeUrl(type)}/${item.detailsId}`;
   return {
@@ -86,7 +86,7 @@ export function getExternalPriceFromNinjaCurrencyItem(
   type: string,
   league: string
 ) {
-  const detailsUrl = `${AppConfig.poeNinjaBaseUrl}/${getNinjaLeagueUrl(
+  const detailsUrl = `${AppConfig.poeNinjaBaseUrl}/poe1/economy/${getNinjaLeagueUrl(
     league.toLowerCase()
   )}/${getNinjaTypeUrl(type)}/${item.detailsId}`;
   const calculated = item.receive ? item.receive.value : 0;

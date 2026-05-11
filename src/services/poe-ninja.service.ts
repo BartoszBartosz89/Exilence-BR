@@ -1,9 +1,10 @@
 import axios, { AxiosResponse } from 'axios';
-import { forkJoin, from } from 'rxjs';
+import { forkJoin, from, of } from 'rxjs';
 import RateLimiter from 'rxjs-ratelimiter';
-import { map } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { IExternalPrice } from '../interfaces/external-price.interface';
 import { IPoeNinjaItemOverview } from '../interfaces/poe-ninja/poe-ninja-item-overview.interface';
+import { IPoeNinjaItemOverviewLine } from '../interfaces/poe-ninja/poe-ninja-item-overview-line.interface';
 import {
   getExternalPriceFromNinjaCurrencyItem,
   getExternalPriceFromNinjaItem,
@@ -11,7 +12,7 @@ import {
 import { IPoeNinjaCurrencyOverview } from './../interfaces/poe-ninja/poe-ninja-currency-overview.interface';
 
 const rateLimiter = new RateLimiter(1, 1);
-const apiUrl = 'https://poe.ninja/api/data';
+const apiUrl = 'https://poe.ninja/poe1/api/economy';
 
 export const poeninjaService = {
   getCurrencyCategories,
@@ -63,22 +64,27 @@ function getItemCategories() {
     'AllflameEmber',
     //'BaseType',
     //'HelmetEnchant',
-    'KalguuranRune',
+    'Runegraft',
   ];
   return categories;
 }
 
 function getItemCategoryOverview(league: string, type: string) {
-  const parameters = `?league=${league}&type=${type}`;
+  const parameters = `?league=${encodeURIComponent(league)}&type=${type}`;
+  const endpoint = getExchangeItemCategories().includes(type)
+    ? 'exchange/current/overview'
+    : 'stash/current/currency/overview';
   return rateLimiter.limit(
-    from(axios.get<IPoeNinjaItemOverview>(`${apiUrl}/itemoverview${parameters}`))
+    from(axios.get<IPoeNinjaItemOverview>(`${apiUrl}/${endpoint}${parameters}`))
   );
 }
 
 function getCurrencyCategoryOverview(league: string, type: string) {
-  const parameters = `?league=${league}&type=${type}`;
+  const parameters = `?league=${encodeURIComponent(league)}&type=${type}`;
   return rateLimiter.limit(
-    from(axios.get<IPoeNinjaCurrencyOverview>(`${apiUrl}/currencyoverview${parameters}`))
+    from(
+      axios.get<IPoeNinjaCurrencyOverview>(`${apiUrl}/stash/current/currency/overview${parameters}`)
+    )
   );
 }
 
@@ -86,15 +92,19 @@ function getItemPrices(league: string) {
   return forkJoin(
     getItemCategories().map((type) => {
       return getItemCategoryOverview(league, type).pipe(
-        map((response: AxiosResponse<IPoeNinjaItemOverview>) => {
+        map((response: AxiosResponse<IPoeNinjaItemOverview | IPoeNinjaExchangeOverview>) => {
           if (response.data) {
-            return response.data.lines.map((lines) => {
+            const lines = isExchangeOverview(response.data)
+              ? mapExchangeOverviewLines(response.data, type)
+              : response.data.lines;
+            return lines.map((lines) => {
               return getExternalPriceFromNinjaItem(lines, type, league) as IExternalPrice;
             });
           } else {
             return []; // no prices found on ninja
           }
-        })
+        }),
+        catchError(() => of([] as IExternalPrice[]))
       );
     })
   ).pipe(map((arrays) => arrays.reduce((acc, array) => [...acc, ...array], [])));
@@ -120,8 +130,106 @@ function getCurrencyPrices(league: string) {
           } else {
             return []; // no prices found on ninja
           }
-        })
+        }),
+        catchError(() => of([] as IExternalPrice[]))
       );
     })
   ).pipe(map((arrays) => arrays.reduce((acc, array) => [...acc, ...array], [])));
+}
+
+function getExchangeItemCategories() {
+  return [
+    'AllflameEmber',
+    'Artifact',
+    'DeliriumOrb',
+    'DivinationCard',
+    'DjinnCoin',
+    'Essence',
+    'Fossil',
+    'Omen',
+    'Oil',
+    'Resonator',
+    'Runegraft',
+    'Scarab',
+    'Tattoo',
+  ];
+}
+
+function isExchangeOverview(
+  overview: IPoeNinjaItemOverview | IPoeNinjaExchangeOverview
+): overview is IPoeNinjaExchangeOverview {
+  return Array.isArray((overview as IPoeNinjaExchangeOverview).items);
+}
+
+function mapExchangeOverviewLines(
+  overview: IPoeNinjaExchangeOverview,
+  type: string
+): IPoeNinjaItemOverviewLine[] {
+  return overview.lines.reduce((acc: IPoeNinjaItemOverviewLine[], line) => {
+    const item = overview.items.find((i) => i.id === line.id);
+    if (!item) {
+      return acc;
+    }
+    acc.push({
+      id: 0,
+      name: item.name,
+      icon: getIconUrl(item.image),
+      mapTier: 0,
+      levelRequired: 0,
+      stackSize: 0,
+      variant: '',
+      links: 0,
+      itemClass: getItemClass(type),
+      sparkline: line.sparkline,
+      lowConfidenceSparkline: line.sparkline,
+      implicitModifiers: [],
+      explicitModifiers: [],
+      flavourText: '',
+      corrupted: false,
+      gemLevel: 0,
+      gemQuality: 0,
+      itemType: type,
+      chaosValue: line.primaryValue,
+      exaltedValue: 0,
+      count: line.volumePrimaryValue,
+      detailsId: item.detailsId,
+    });
+    return acc;
+  }, []);
+}
+
+function getIconUrl(icon?: string) {
+  if (!icon) {
+    return '';
+  }
+  return icon.startsWith('/') ? `https://web.poecdn.com${icon}` : icon;
+}
+
+function getItemClass(type: string) {
+  if (type === 'DivinationCard') {
+    return 6;
+  }
+  return 5;
+}
+
+interface IPoeNinjaExchangeOverview {
+  lines: IPoeNinjaExchangeOverviewLine[];
+  items: IPoeNinjaExchangeOverviewItem[];
+}
+
+interface IPoeNinjaExchangeOverviewLine {
+  id: string;
+  primaryValue: number;
+  volumePrimaryValue: number;
+  sparkline: {
+    totalChange: number;
+    data: number[];
+  };
+}
+
+interface IPoeNinjaExchangeOverviewItem {
+  id: string;
+  name: string;
+  image?: string;
+  detailsId: string;
 }

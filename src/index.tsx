@@ -157,6 +157,7 @@ const renderApp = () => {
     hydrate('poedbPrice', rootStore.poeDbPriceStore),
   ])
     .then(() => {
+      rootStore.poeDbPriceStore.ensurePriceSetsInitialized();
       rootStore.settingStore.setUiScale(rootStore.settingStore.uiScale);
       // if last stash tab request is sent less than 5 min ago, put on cooldown
       const fiveMinutesAgo = moment().utc().subtract(5, 'minutes');

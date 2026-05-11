@@ -193,16 +193,18 @@ function createWindow() {
 
   if (isDev) {
     browserWindows[MAIN_BROWSER_WINDOW].webContents.openDevTools();
-    // Hot Reloading on 'node_modules/.bin/electronPath'
+    const electronExecutable = path.join(
+      __dirname,
+      '..',
+      '..',
+      'node_modules',
+      'electron',
+      'dist',
+      'electron' + (process.platform === SYSTEMS.WINDOWS ? '.exe' : '')
+    );
+
     require('electron-reload')(__dirname, {
-      electron: path.join(
-        __dirname,
-        '..',
-        '..',
-        'node_modules',
-        '.bin',
-        'electron' + (process.platform === SYSTEMS.WINDOWS ? '.cmd' : '')
-      ),
+      electron: electronExecutable,
       forceHardReset: true,
       hardResetMethod: 'exit',
     });
@@ -216,7 +218,10 @@ function createWindow() {
 }
 
 if (isDev && process.platform !== SYSTEMS.MACOS) {
-  app.setAsDefaultProtocolClient('exilence', process.execPath, [path.resolve(process.argv[1])]);
+  const devAppPath = path.resolve(process.argv[1]);
+  const protocolAppPath = process.platform === SYSTEMS.WINDOWS ? `"${devAppPath}"` : devAppPath;
+
+  app.setAsDefaultProtocolClient('exilence', process.execPath, [protocolAppPath]);
 } else {
   app.setAsDefaultProtocolClient('exilence');
 }
