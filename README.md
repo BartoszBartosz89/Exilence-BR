@@ -1,16 +1,17 @@
-Exilence Blight Ravaged Science Edition
-===
-Exilence CE (previously Exilence Next) is a desktop application that helps you calculate how valuable your character, inventory and stash tabs are. The data is broken down and summarized over time, to see how much you earn on an hourly basis. To add to this, you can also group up with friends directly within the app to see your combined net worth.
+# Exilence BR
 
-The app is a successor to our old application named Exilence, previously known as ExileParty.
+Exilence BR is a community fork of Exilence CE focused on Path of Exile stash valuation, PoEDB historical pricing, economy analysis, and strategy review workflows. It helps calculate how valuable your character, inventory, and stash tabs are, then tracks that value over time.
+
+The original app was Exilence CE, previously Exilence Next and ExileParty.
 
 ![Preview image](https://i.imgur.com/IfyINev.png)
 
 ## Contents
 
 - [Download](#download)
-- [Changelog](https://github.com/exilence-ce/exilence-ce/blob/master/CHANGELOG.md)
+- [Changelog](https://github.com/BartoszBartosz89/Exilence-BR/blob/master/CHANGELOG.md)
 - [Platform](#platform)
+- [Release and updates](#release-and-updates)
 - [Contributing with development](#contributing-with-development)
 - [PoEDB historical price links](#poedb-historical-price-links)
 - [Contact us](#contact-us)
@@ -20,7 +21,7 @@ The app is a successor to our old application named Exilence, previously known a
 
 ## Download
 
-Download the latest release at https://github.com/exilence-ce/exilence-ce/releases/latest
+Download the latest release at https://github.com/BartoszBartosz89/Exilence-BR/releases/latest
 
 ## Platform
 
@@ -33,11 +34,24 @@ Currently runs with:
 - **node 16.x**
 - **npm 7.x**
 
+## Release and updates
+
+Release builds are published from GitHub tags named `v*`, for example `v3.28.1`.
+
+The Windows updater reads release metadata from this repository's GitHub Releases page. A release must include:
+
+- `Exilence-BR-X.Y.Z.exe`
+- `Exilence-BR-X.Y.Z.exe.blockmap`
+- `latest.yml`
+
+The installer uses a separate app identity from upstream Exilence CE, so it should install and update as Exilence BR instead of overwriting the upstream app.
+
 ## Contributing with development
 
-Before submitting a PR, please see our [contributing guidelines](https://github.com/exilence-ce/exilence-ce/blob/master/CONTRIBUTING.md).
+Before submitting a PR, please see our [contributing guidelines](https://github.com/BartoszBartosz89/Exilence-BR/blob/master/CONTRIBUTING.md).
 
 ---
+
 **Prerequisite for building LINUX**
 
 You will need to manually set protocol handling. Follow steps below:
@@ -46,34 +60,39 @@ You will need to manually set protocol handling. Follow steps below:
 
 ```bash
 [Desktop Entry]
-Name=Exilence CE
-Exec=<ABSOLUTE PATH TO ExilenceCE>/ExilenceCEApp/dist/<Exilence-CE-X.Y.Z.AppImage> %u
-Icon=<ABSOLUTE PATH TO ExilenceCE>/ExilenceCEApp/public/icon.ico
+Name=Exilence BR
+Exec=<ABSOLUTE PATH TO ExilenceBR>/ExilenceBRApp/dist/<Exilence-BR-X.Y.Z.AppImage> %u
+Icon=<ABSOLUTE PATH TO ExilenceBR>/ExilenceBRApp/public/icon.ico
 Terminal=false
 Type=Application
 MimeType=x-scheme-handler/exilence;
 ```
 
 2. Run:
+
 - `update-mime-database ~/.local/share/mime`
 - `update-desktop-database ~/.local/share/applications`
+
 ---
 
 Run the following to get started with the client:
+
 ```
 npm install
 npm run smoke-build-linux (build for linux)
 npm run smoke-build-mac (build for macOS)
 npm run smoke-build-win (build for windows)
 ```
+
 These create the AppImage the .desktop file points to.
 
-NOTE: Running a build using node versions newer than v14 seem to fail on MacOS and Linux. For development on these platforms, it's recommended to use v14.16.1 (Latest LTS).
+NOTE: This fork builds with Node 16.20.2. Use the version from `.nvmrc` when building release artifacts.
 
 Other build options:
+
 ```
 npm start (to serve the project)
-npm run build (optional, to build the installer for production) 
+npm run build (optional, to build the installer for production)
 ---
 npm run release (optional, to build the installer for production and release)
 ```
@@ -100,7 +119,7 @@ The app ships with this generated map, so users do not need to apply PoEDB links
 
 Communicate with us at our Discord https://discord.gg/2T3WXBgjaM
 
-Report bugs at https://github.com/exilence-ce/exilence-ce/issues
+Report bugs at https://github.com/BartoszBartosz89/Exilence-BR/issues
 
 ## Acknowledgements
 
@@ -109,7 +128,3 @@ Report bugs at https://github.com/exilence-ce/exilence-ce/issues
 ## License
 
 This work is licensed under the Creative Commons Attribution-NonCommercial 3.0 Unported License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc/3.0/ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
-
-
-
-
