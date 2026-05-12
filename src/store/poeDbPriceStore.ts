@@ -19,6 +19,7 @@ export class PoeDbPriceStore {
   @persist @observable selectedDate?: string = undefined;
   @persist('list') @observable priceSets: IPoeDbPriceSet[] = [];
   @persist @observable activePriceSetId?: string = undefined;
+  @persist @observable bundledLinksCount: number = 0;
 
   @observable resolving: boolean = false;
   @observable pulling: boolean = false;
@@ -423,6 +424,17 @@ export class PoeDbPriceStore {
   @action
   syncMappingsFromPrices() {
     this.ensurePriceSetsInitialized();
+    this.rebuildMappingsFromPrices();
+  }
+
+  @action
+  refreshMappingsFromBundledLinks() {
+    this.ensurePriceSetsInitialized();
+    this.rebuildMappingsFromPrices();
+    this.importExportMessage = `Refreshed mappings from ${this.bundledLinksCount} bundled PoEDB links.`;
+  }
+
+  private rebuildMappingsFromPrices() {
     this.migrateLegacyHistoryToUrlCache();
     const nowIso = new Date().toISOString();
 
@@ -448,6 +460,7 @@ export class PoeDbPriceStore {
       this.selectedDate = this.availableDates[this.availableDates.length - 1];
     }
 
+    this.bundledLinksCount = poeDbService.getHardcodedLinksCount();
     this.syncActivePriceSetData();
   }
 
@@ -701,6 +714,7 @@ export class PoeDbPriceStore {
       if (activeSet && activeSet.urlHistories.length === 0 && this.urlHistories.length > 0) {
         this.syncActivePriceSetData();
       }
+      this.refreshMappingsWhenBundledLinksChanged();
       return;
     }
 
@@ -716,6 +730,14 @@ export class PoeDbPriceStore {
     };
     this.priceSets = [initialSet];
     this.activePriceSetId = initialSet.uuid;
+    this.refreshMappingsWhenBundledLinksChanged();
+  }
+
+  private refreshMappingsWhenBundledLinksChanged() {
+    const currentBundledLinksCount = poeDbService.getHardcodedLinksCount();
+    if (this.bundledLinksCount !== currentBundledLinksCount) {
+      this.rebuildMappingsFromPrices();
+    }
   }
 
   private syncActivePriceSetData() {
