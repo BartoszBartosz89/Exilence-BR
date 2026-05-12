@@ -4,7 +4,7 @@ const path = require('path');
 const axios = require('axios');
 
 const POEDB_BASE = 'https://poedb.tw/us';
-const POE_NINJA_BASE = 'https://poe.ninja/api/data';
+const POE_NINJA_BASE = 'https://poe.ninja/poe1/api/economy';
 const INPUT_FILE = path.resolve(__dirname, '..', 'src', 'data', 'poedb-item-links.generated.json');
 const REPORT_FILE = path.resolve(__dirname, '..', 'scripts', 'poedb-links-validation-report.json');
 
@@ -38,7 +38,23 @@ const ITEM_CATEGORIES = [
   'BlightRavagedMap',
   'Coffin',
   'AllflameEmber',
-  'KalguuranRune',
+  'Runegraft',
+];
+
+const EXCHANGE_ITEM_CATEGORIES = [
+  'AllflameEmber',
+  'Artifact',
+  'DeliriumOrb',
+  'DivinationCard',
+  'DjinnCoin',
+  'Essence',
+  'Fossil',
+  'Omen',
+  'Oil',
+  'Resonator',
+  'Runegraft',
+  'Scarab',
+  'Tattoo',
 ];
 
 function normalizeLookupToken(value) {
@@ -87,7 +103,9 @@ function getItemNameCandidates(item) {
     .filter((x) => x && String(x).trim().length > 0)
     .map((x) => String(x).trim());
 
-  return Array.from(new Set(names.flatMap((name) => [name, name.replace(/'/g, ''), name.replace(/’/g, '')])));
+  return Array.from(
+    new Set(names.flatMap((name) => [name, name.replace(/'/g, ''), name.replace(/’/g, '')]))
+  );
 }
 
 function containsEconomyChart(html) {
@@ -126,16 +144,40 @@ async function getHtml(url) {
 }
 
 async function fetchItemOverview(league, type) {
-  const url = `${POE_NINJA_BASE}/itemoverview?league=${encodeURIComponent(league)}&type=${encodeURIComponent(type)}`;
-  const response = await axios.get(url, { timeout: 25000 });
-  return response.data?.lines || [];
+  const endpoint = EXCHANGE_ITEM_CATEGORIES.includes(type)
+    ? 'exchange/current/overview'
+    : 'stash/current/item/overview';
+  const url = `${POE_NINJA_BASE}/${endpoint}?league=${encodeURIComponent(
+    league
+  )}&type=${encodeURIComponent(type)}`;
+
+  try {
+    const response = await axios.get(url, { timeout: 25000 });
+    if (Array.isArray(response.data?.items)) {
+      const pricedIds = new Set((response.data?.lines || []).map((line) => line.id));
+      return response.data.items
+        .filter((item) => pricedIds.has(item.id))
+        .map((item) => ({ name: item.name || '', baseType: '' }));
+    }
+    return response.data?.lines || [];
+  } catch (error) {
+    console.warn(`Skipping ${type}: ${error?.response?.status || error.message || 'fetch failed'}`);
+    return [];
+  }
 }
 
 async function fetchCurrencyOverview(league, type) {
-  const url = `${POE_NINJA_BASE}/currencyoverview?league=${encodeURIComponent(league)}&type=${encodeURIComponent(type)}`;
-  const response = await axios.get(url, { timeout: 25000 });
-  const lines = response.data?.lines || [];
-  return lines.map((line) => ({ name: line.currencyTypeName, baseType: '' }));
+  const url = `${POE_NINJA_BASE}/stash/current/currency/overview?league=${encodeURIComponent(
+    league
+  )}&type=${encodeURIComponent(type)}`;
+  try {
+    const response = await axios.get(url, { timeout: 25000 });
+    const lines = response.data?.lines || [];
+    return lines.map((line) => ({ name: line.currencyTypeName, baseType: '' }));
+  } catch (error) {
+    console.warn(`Skipping ${type}: ${error?.response?.status || error.message || 'fetch failed'}`);
+    return [];
+  }
 }
 
 async function loadItemUniverse(league) {
@@ -260,7 +302,9 @@ async function main() {
   });
 
   console.log(`Validation report written to ${REPORT_FILE}`);
-  console.log(`Universe: ${universe.length} | missing: ${missing.length} | invalid: ${invalid.length}`);
+  console.log(
+    `Universe: ${universe.length} | missing: ${missing.length} | invalid: ${invalid.length}`
+  );
 }
 
 main().catch((error) => {

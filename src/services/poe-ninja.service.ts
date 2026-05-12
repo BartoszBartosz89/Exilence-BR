@@ -13,6 +13,8 @@ import { IPoeNinjaCurrencyOverview } from './../interfaces/poe-ninja/poe-ninja-c
 
 const rateLimiter = new RateLimiter(1, 1);
 const apiUrl = 'https://poe.ninja/poe1/api/economy';
+const divinationCardIconUrl =
+  'https://web.poecdn.com/image/Art/2DItems/Divination/InventoryIcon.png?scale=1&w=1&h=1';
 
 export const poeninjaService = {
   getCurrencyCategories,
@@ -73,7 +75,7 @@ function getItemCategoryOverview(league: string, type: string) {
   const parameters = `?league=${encodeURIComponent(league)}&type=${type}`;
   const endpoint = getExchangeItemCategories().includes(type)
     ? 'exchange/current/overview'
-    : 'stash/current/currency/overview';
+    : 'stash/current/item/overview';
   return rateLimiter.limit(
     from(axios.get<IPoeNinjaItemOverview>(`${apiUrl}/${endpoint}${parameters}`))
   );
@@ -173,7 +175,7 @@ function mapExchangeOverviewLines(
     acc.push({
       id: 0,
       name: item.name,
-      icon: getIconUrl(item.image),
+      icon: getIconUrl(item.image, type),
       mapTier: 0,
       levelRequired: 0,
       stackSize: 0,
@@ -198,8 +200,11 @@ function mapExchangeOverviewLines(
   }, []);
 }
 
-function getIconUrl(icon?: string) {
+function getIconUrl(icon?: string, type?: string) {
   if (!icon) {
+    if (type === 'DivinationCard') {
+      return divinationCardIconUrl;
+    }
     return '';
   }
   return icon.startsWith('/') ? `https://web.poecdn.com${icon}` : icon;
